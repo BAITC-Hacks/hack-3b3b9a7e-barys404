@@ -1,0 +1,114 @@
+"""Bounded, aggregate-only reads for the dashboard; never materialize referral rows."""
+from pathlib import Path
+
+import duckdb
+
+from src.config import ANALYTICAL_PATH, DUCKDB_MEMORY_LIMIT, THREAD_COUNT
+
+
+DIMENSIONS = {"region_origin_code", "hospital_mo", "bed_profile"}
+
+
+def file_version(path):
+    path = Path(path)
+    if not path.exists():
+        return (0, 0)
+    stat = path.stat()
+    return (stat.st_mtime_ns, stat.st_size)
+
+
+def aggregate_query(path, sql, parameters=()):
+    """SQL templates must be code-owned and aggregate/project before calling df()."""
+    with duckdb.connect(config={"memory_limit": DUCKDB_MEMORY_LIMIT, "threads": THREAD_COUNT}) as con:
+        return con.execute(sql, [str(path), *parameters]).df()
+
+
+def dimensions(path=ANALYTICAL_PATH):
+    result = {}
+    for column in sorted(DIMENSIONS):
+        result[column] = aggregate_query(
+            path,
+            f"SELECT DISTINCT {column} AS value FROM read_parquet(?) "
+            f"WHERE {column} IS NOT NULL ORDER BY value",
+        )["value"].astype(str).tolist()
+    dates = aggregate_query(path, "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)")
+    result["dates"] = dates.iloc[0].to_dict()
+    return result
+
+
+def cohort_where(filters):
+    clauses, values = ["TRUE"], []
+    for column in sorted(DIMENSIONS):
+        value = filters.get(column)
+        if value is not None:
+            clauses.append(f"{column} = ?")
+            values.append(value)
+    if filters.get("start"):
+        clauses.append("CAST(registration_dt AS DATE) >= CAST(? AS DATE)")
+        values.append(str(filters["start"]))
+    if filters.get("end"):
+        clauses.append("CAST(registration_dt AS DATE) <= CAST(? AS DATE)")
+        values.append(str(filters["end"]))
+    return " AND ".join(clauses), values
+
+
+def overview(filters, path=ANALYTICAL_PATH):
+    where, params = cohort_where(filters)
+    sql = f"""SELECT count(*) AS referrals,
+        count(*) FILTER (WHERE outcome = 'hospitalized') AS hospitalized,
+        count(*) FILTER (WHERE outcome = 'refused') AS refused,
+        count(*) FILTER (WHERE outcome = 'unresolved') AS unresolved,
+        count(*) FILTER (WHERE outcome = 'conflicting') AS conflicting,
+        count(*) FILTER (WHERE outcome = 'invalid_outcome') AS invalid_outcome,
+        count(*) FILTER (WHERE target_eligible) AS eligible,
+        avg(wait_days) FILTER (WHERE target_eligible) AS mean_wait,
+        median(wait_days) FILTER (WHERE target_eligible) AS median_wait,
+        count(DISTINCT hospital_mo) AS hospitals
+        FROM read_parquet(?) WHERE {where}"""
+    return aggregate_query(path, sql, params).iloc[0].to_dict()
+
+
+def historical_charts(filters, path=ANALYTICAL_PATH):
+    where, params = cohort_where(filters)
+    events = aggregate_query(path, f"""
+        WITH cohort AS (SELECT registration_dt, hospitalization_dt, refusal_dt, outcome
+            FROM read_parquet(?) WHERE {where}),
+        events AS (
+            SELECT CAST(registration_dt AS DATE) AS date, 'Referrals' AS event FROM cohort WHERE registration_dt IS NOT NULL
+            UNION ALL
+            SELECT CAST(hospitalization_dt AS DATE), 'Hospitalizations' FROM cohort WHERE outcome='hospitalized'
+            UNION ALL
+            SELECT CAST(refusal_dt AS DATE), 'Refusals' FROM cohort WHERE outcome='refused')
+        SELECT date, event, count(*) AS records FROM events WHERE date IS NOT NULL GROUP BY ALL ORDER BY date
+        """, params)
+    waits = aggregate_query(path, f"""SELECT floor(wait_days)::INTEGER AS waiting_day,
+        count(*) AS records FROM read_parquet(?) WHERE {where} AND target_eligible
+        GROUP BY waiting_day ORDER BY waiting_day""", params)
+    hospitals = aggregate_query(path, f"""SELECT hospital_mo AS hospital,
+        count(*) AS referrals, count(*) FILTER (WHERE outcome='unresolved') AS unresolved,
+        count(*) FILTER (WHERE outcome='hospitalized') AS hospitalized,
+        count(*) FILTER (WHERE outcome='refused') AS refused,
+        avg(wait_days) FILTER (WHERE target_eligible) AS mean_wait_days
+        FROM read_parquet(?) WHERE {where} GROUP BY hospital_mo
+        ORDER BY referrals DESC LIMIT 20""", params)
+    return events, waits, hospitals
+
+
+def pressure_rows(path, hospital=None, start=None, end=None):
+    clauses, params = ["TRUE"], []
+    if hospital:
+        clauses.append("hospital_mo = ?")
+        params.append(hospital)
+    if start:
+        clauses.append("date >= CAST(? AS DATE)")
+        params.append(str(start))
+    if end:
+        clauses.append("date <= CAST(? AS DATE)")
+        params.append(str(end))
+    where = " AND ".join(clauses)
+    # Already hospital/day aggregates; bounded projection never contains individual identifiers.
+    return aggregate_query(path, f"""SELECT hospital_mo, date, referrals, hospitalized,
+        refusals, reconstructed_open_cohort, prototype_pressure,
+        pressure_reason, history_days, anomaly_referrals, anomaly_refusals,
+        anomaly_open_cohort_growth
+        FROM read_parquet(?) WHERE {where} ORDER BY date DESC, referrals DESC LIMIT 30000""", params)

@@ -1,0 +1,109 @@
+"""Small artificial fixtures exclusively test leakage and model invariants."""
+import numpy as np
+import pandas as pd
+import pytest
+
+from src.feature_engineering import CATEGORICAL_FEATURES, FEATURE_COLUMNS, make_features
+from src.train_waiting_model import aggregate_predictions, chronological_split, regression_metrics
+
+
+def test_feature_allowlist_excludes_identifiers_and_all_outcomes():
+    frame = pd.DataFrame({"registration_dt": ["2025-01-06"], "hospital_mo": [None], "wait_days": [12], "hospitalization_dt": ["2025-01-18"], "hospitalization_code": ["sensitive-key"], "planned_dt": ["2025-01-17"], "refusal_dt": ["2025-02-01"]})
+    features = make_features(frame)
+    assert features.columns.tolist() == FEATURE_COLUMNS
+    assert features.loc[0, "registration_day_of_week"] == 0
+    assert features.loc[0, "registration_day"] == 6
+    assert features.loc[0, "hospital_mo"] == "__MISSING__"
+    changed_outcomes = frame.assign(wait_days=90, hospitalization_dt="2025-03-01", hospitalization_code="other", planned_dt="2025-04-01")
+    pd.testing.assert_frame_equal(features, make_features(changed_outcomes))
+
+
+def test_invalid_registration_does_not_silently_impute():
+    with pytest.raises(ValueError, match="invalid dates"):
+        make_features({"registration_dt": "not a date"})
+
+
+def _temporal_fixture():
+    dates = pd.date_range("2025-01-01", periods=10, freq="D")
+    return pd.DataFrame({"registration_dt": dates, "hospitalization_dt": dates + pd.Timedelta(hours=1), "wait_days": 1 / 24, "target_eligible": True})
+
+
+def test_whole_date_split_purges_future_labels_and_uses_unlabeled_dates():
+    frame = _temporal_fixture()
+    # A train-window referral whose outcome is unavailable at the Jan 9 cutoff.
+    frame.loc[1, "hospitalization_dt"] = pd.Timestamp("2025-01-09 00:00")
+    frame.loc[1, "wait_days"] = 7
+    # Jan 8 stays in the calendar although it has no usable outcome.
+    frame.loc[7, "target_eligible"] = False
+    frame = pd.concat([frame, frame.iloc[[8]].assign(registration_dt=pd.Timestamp("2025-01-09 14:00"), hospitalization_dt=pd.Timestamp("2025-01-10"))], ignore_index=True)
+    train, test, info = chronological_split(frame)
+    assert info["test_start"] == "2025-01-09T00:00:00"
+    assert info["exclusions"]["early_labels_unavailable_at_cutoff"] == 1
+    assert len(train) == 6
+    assert len(test) == 3
+    assert train["hospitalization_dt"].max() < pd.Timestamp(info["test_start"])
+    assert set(train["registration_dt"].dt.date).isdisjoint(test["registration_dt"].dt.date)
+
+
+def test_contradictory_outcomes_and_out_of_bounds_targets_cannot_train():
+    frame = _temporal_fixture()
+    frame["refusal_dt"] = pd.NaT
+    frame.loc[1, "refusal_dt"] = pd.Timestamp("2025-01-02")
+    frame.loc[2, "wait_days"] = -1
+    frame.loc[3, "wait_days"] = 91
+    train, _, info = chronological_split(frame)
+    assert not {1, 2, 3}.intersection(train.index)
+    assert info["exclusions"]["early_rows_without_eligible_target"] == 3
+
+
+def test_too_little_history_fails_instead_of_random_split():
+    with pytest.raises(ValueError, match="two distinct"):
+        chronological_split(_temporal_fixture().iloc[[0]])
+
+
+def test_metrics_are_computed_and_negative_improvement_is_reported():
+    metrics = regression_metrics([0, 2], [10, 10], median_prediction=1)
+    assert metrics["mae"] == 9
+    assert metrics["baseline_mae"] == 1
+    assert metrics["improvement_pct"] == -800
+    assert metrics["rmse"] == pytest.approx(np.sqrt(82))
+
+
+def test_aggregate_artifact_suppresses_small_groups_and_has_no_patient_rows():
+    actual = [0.5] * 12 + [5.0] * 2
+    predicted = [1.5] * 12 + [3.0] * 2
+    result = aggregate_predictions(actual, predicted)
+    assert len(result) == 1
+    assert result[0]["count"] == 12
+    assert result[0]["actual_mean"] == 0.5
+    assert result[0]["predicted_mean"] == 1.5
+    assert set(result[0]) == {"actual_bin", "count", "actual_mean", "predicted_mean"}
+
+
+def test_persisted_model_inference_matches_evaluation_and_refuses_stale_data(tmp_path, monkeypatch):
+    from catboost import CatBoostRegressor
+    from src import config, predict
+    from src.utils import write_json
+
+    # This local toy model validates serialization, not predictive performance.
+    frame = pd.DataFrame({"registration_dt": pd.date_range("2025-01-01", periods=12), "hospital_mo": ["test-hospital"] * 12})
+    features = make_features(frame)
+    fitted = CatBoostRegressor(iterations=3, depth=2, verbose=False, allow_writing_files=False, thread_count=1)
+    fitted.fit(features, np.arange(12, dtype=float), cat_features=CATEGORICAL_FEATURES)
+    monkeypatch.setattr(config, "MODEL_PATH", tmp_path / "model.cbm")
+    monkeypatch.setattr(config, "METADATA_PATH", tmp_path / "metadata.json")
+    monkeypatch.setattr(config, "QUALITY_PATH", tmp_path / "quality.json")
+    monkeypatch.setattr(predict, "source_fingerprint", lambda: "current")
+    fitted.save_model(str(config.MODEL_PATH))
+    write_json(config.METADATA_PATH, {"source_fingerprint": "current"})
+    write_json(config.QUALITY_PATH, {"source_fingerprint": "current", "pipeline_complete": True})
+    expected = np.maximum(0, fitted.predict(features))
+    np.testing.assert_allclose(predict.predict_batch(frame), expected)
+    assert predict.predict_waiting_time(frame.iloc[0].to_dict()) == pytest.approx(expected[0])
+    write_json(config.QUALITY_PATH, {"source_fingerprint": "current", "pipeline_complete": False})
+    assert predict.model_status()["available"] is False
+    write_json(config.QUALITY_PATH, {"source_fingerprint": "current", "pipeline_complete": True})
+    monkeypatch.setattr(predict, "source_fingerprint", lambda: "new-part-added")
+    assert predict.model_status()["stale"] is True
+    with pytest.raises(FileNotFoundError, match="changed"):
+        predict.predict_waiting_time(frame.iloc[0].to_dict())
