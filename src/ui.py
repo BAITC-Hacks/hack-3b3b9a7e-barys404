@@ -13,7 +13,7 @@ from src import dashboard_data as db
 
 
 COLORS = ["#087F8C", "#3969B3", "#E5A24A", "#9073BA"]
-PAGES = ["Overview", "Hospital explorer", "Waiting time prediction", "Model performance", "Pressure & anomalies", "Data quality"]
+PAGES = ["Overview", "Hospital explorer", "Waiting time prediction", "Model performance", "7-day load forecast", "Pressure & anomalies", "Data quality"]
 
 
 def read_json(path):
@@ -314,6 +314,63 @@ def performance_page(report, changed):
     model_training_control(changed)
 
 
+def forecast_page(report, changed):
+    title("7-DAY REFERRAL FORECAST", "A short-term demand prototype.", "Forecasted incoming referrals by hospital, based on historical daily referral counts.")
+    st.warning("Prototype only: this forecasts referrals received, not bed occupancy, staffed capacity, admissions, or a live waiting list.")
+    path = PROCESSED_DIR / "hospital_day.parquet"
+    if not path.exists():
+        st.info("Prepare the referral data before training a forecast.")
+        return
+    from src.load_forecast import METADATA_PATH as FORECAST_METADATA_PATH, MODEL_PATH as FORECAST_MODEL_PATH, forecast_status
+    metadata = read_json(FORECAST_METADATA_PATH)
+    status = forecast_status(report)
+    if changed or not status["available"]:
+        if changed or status.get("stale"):
+            st.info("Source data changed. Refresh data and retrain this forecast before using it.")
+        else:
+            st.info("No trained 7-day referral forecast is available yet.")
+        if st.button("Train / evaluate 7-day forecast", disabled=changed, type="primary"):
+            try:
+                from src.load_forecast import train_load_forecast
+                with st.spinner("Training the seven-day referral-load prototype on historical hospital/day data…"):
+                    train_load_forecast()
+                st.cache_data.clear()
+                st.rerun()
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception("Load forecast training failed")
+                st.error("Forecast training could not finish. At least 35 days of hospital history are required.")
+        return
+    metrics = metadata.get("metrics", {})
+    for column, (label, key, suffix) in zip(st.columns(4), [("Forecast MAE", "mae", " referrals"), ("Forecast RMSE", "rmse", " referrals"), ("7-day mean baseline MAE", "baseline_mae", " referrals"), ("MAE improvement", "improvement_pct", "%")]):
+        column.metric(label, number(metrics.get(key), suffix))
+    st.caption("Metrics use the final seven observed calendar days as a chronological test. Lower MAE is better.")
+    hospitals = db.aggregate_query(path, "SELECT hospital_mo FROM read_parquet(?) GROUP BY hospital_mo ORDER BY sum(referrals) DESC, hospital_mo")["hospital_mo"].dropna().astype(str).tolist()
+    if not hospitals:
+        st.info("No hospitals with referral history are available.")
+        return
+    selected = st.selectbox("Hospital", hospitals, key="forecast_hospital")
+    try:
+        from src.load_forecast import forecast_next_week
+        forecast = forecast_next_week(selected)
+        history = db.pressure_rows(path, hospital=selected).sort_values("date").tail(28)
+    except (ValueError, FileNotFoundError):
+        st.info("This hospital does not yet have the 28 observed days required for a forecast.")
+        return
+    total = float(forecast["predicted_referrals"].sum())
+    st.metric("Predicted referrals · next 7 days", number(total))
+    with st.container(border=True):
+        observed = history.loc[:, ["date", "referrals"]].rename(columns={"referrals": "records"}).assign(series="Observed referrals")
+        projected = forecast.rename(columns={"predicted_referrals": "records"}).assign(series="Forecast")
+        chart(px.line(pd.concat([observed, projected]), x="date", y="records", color="series", markers=True, color_discrete_sequence=[COLORS[0], COLORS[2]], labels={"date": "Date", "records": "Referrals", "series": ""}))
+    values = forecast.assign(predicted_referrals=forecast["predicted_referrals"].round(1)).rename(columns={"date": "Forecast date", "predicted_referrals": "Predicted referrals"})
+    st.dataframe(values, hide_index=True, width="stretch")
+    with st.expander("Forecast scope and limits"):
+        for limitation in metadata.get("limitations", []):
+            st.write(f"• {limitation}")
+        st.json(metadata, expanded=False)
+
+
 def pressure_cohort():
     path = PROCESSED_DIR / "hospital_day.parquet"
     if not path.exists():
@@ -503,6 +560,8 @@ def main():
         prediction_page(report, changed)
     elif page == "Model performance":
         performance_page(report, changed)
+    elif page == "7-day load forecast":
+        forecast_page(report, changed)
     elif page == "Pressure & anomalies":
         pressure_page()
     else:
