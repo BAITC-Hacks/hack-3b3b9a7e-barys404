@@ -17,6 +17,12 @@ SIGNATURES = {
     "treated": {"medicine_organization", "discharged_total", "bed_days"},
 }
 
+# Source exports are supplied in both English and Russian/Kazakh naming
+# conventions (for example, ``part 2 of 3`` and ``Часть 2 из 3``).
+PART_NUMBER_PATTERN = re.compile(
+    r"(?:part|часть)[_\s-]*(\d+)[_\s-]*(?:of|из)[_\s-]*(\d+)", re.IGNORECASE
+)
+
 def csv_format(path):
     # Bounded sniff. A malformed row is an error, never silently skipped.
     with Path(path).open("r", encoding="utf-8-sig", newline="") as file:
@@ -43,7 +49,7 @@ def discover_files(data_dir=DATA_DIR):
 
 def source_fingerprint(files=None):
     files = discover_files() if files is None else files
-    payload = {"pipeline_version": 2, "date_bounds": [MIN_DATE, MAX_DATE], "wait_days_range": [MIN_WAIT_DAYS, MAX_WAIT_DAYS],
+    payload = {"pipeline_version": 3, "date_bounds": [MIN_DATE, MAX_DATE], "wait_days_range": [MIN_WAIT_DAYS, MAX_WAIT_DAYS],
                "files": [(category, str(path.resolve()), path.stat().st_size, path.stat().st_mtime_ns)
                          for category, paths in sorted(files.items()) for path in paths]}
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
@@ -53,7 +59,7 @@ def coverage(files):
     for category, paths in files.items():
         parts, expected = set(), 3 if category == "referrals" else 6 if category == "refusals" else 1
         for path in paths:
-            match = re.search(r"part[_ -]*(\d+)[_ -]*of[_ -]*(\d+)", path.name, re.I)
+            match = PART_NUMBER_PATTERN.search(path.name)
             if match:
                 parts.add(int(match[1]))
                 expected = max(expected, int(match[2]))

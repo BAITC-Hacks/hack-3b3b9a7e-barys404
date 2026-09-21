@@ -6,7 +6,7 @@ import duckdb
 import pytest
 
 from src import preprocessing
-from src.data_loader import load_raw_table
+from src.data_loader import coverage, load_raw_table
 from src.data_quality import inspect_table
 
 
@@ -53,6 +53,26 @@ def _prepare(pipeline, waiting_changes=None, referral_parts=None):
         report["datasets"][category] = inspect_table(connection, category, columns)
         preprocessing.clean_dates(connection, category, columns)
     return report
+
+
+def test_coverage_recognizes_cyrillic_part_names(tmp_path):
+    files = {
+        "waiting": [tmp_path / "Ожидающие.csv"],
+        "referrals": [
+            tmp_path / f"Направления Часть {part} из 3.csv" for part in range(1, 4)
+        ],
+        "refusals": [
+            tmp_path / f"Отказы Часть {part} из 6.csv" for part in range(1, 7)
+        ],
+        "treated": [],
+    }
+
+    result = coverage(files)
+
+    assert result["referrals"]["available_parts"] == [1, 2, 3]
+    assert result["referrals"]["complete"] is True
+    assert result["refusals"]["available_parts"] == [1, 2, 3, 4, 5, 6]
+    assert result["refusals"]["complete"] is True
 
 
 def test_composite_codes_preserve_leading_zeros_through_csv_join(pipeline):
