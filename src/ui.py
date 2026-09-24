@@ -13,7 +13,7 @@ from src import dashboard_data as db
 
 
 COLORS = ["#087F8C", "#3969B3", "#E5A24A", "#9073BA"]
-PAGES = ["Overview", "Hospital explorer", "Waiting time prediction", "Model performance", "7-day load forecast", "Pressure & anomalies", "Data quality"]
+PAGES = ["Overview", "Compare & review", "Hospital explorer", "Waiting time prediction", "Model performance", "7-day load forecast", "Validation evidence", "Pressure & anomalies", "Data quality"]
 
 
 def read_json(path):
@@ -102,6 +102,7 @@ def sidebar(report, ready):
         st.divider()
         st.caption("GOVTECH CAMP · KAZAKHSTAN")
         st.markdown("**Historical data · MVP**")
+        st.toggle("Demo mode", value=ready, key="demo_mode", help="Disables preparation and model-training buttons during the live demo.")
         note = coverage_note(report)
         if note:
             st.caption(note)
@@ -122,7 +123,7 @@ def sidebar(report, ready):
                     filters["start"] = filters["end"] = selected[0]
             st.caption("Filters select referrals registered in this interval. Outcomes may occur later.")
         st.divider()
-        refresh = st.button("Prepare / refresh data", width="stretch")
+        refresh = st.button("Prepare / refresh data", width="stretch", disabled=st.session_state.get("demo_mode", False))
         st.caption("Scans available CSV parts and rebuilds changed data. Model training is a separate step.")
     return page, filters, refresh
 
@@ -211,7 +212,7 @@ def overview_page(report, filters, explorer=False):
 def model_training_control(changed):
     if changed:
         st.warning("New or changed CSV files were detected. Refresh data before training or using the model.")
-    if st.button("Train / evaluate CatBoost", disabled=changed, type="primary"):
+    if st.button("Train / evaluate CatBoost", disabled=changed or st.session_state.get("demo_mode", False), type="primary"):
         try:
             from src.train_waiting_model import train_model
             with st.spinner("Training CatBoost and evaluating on later registration dates…"):
@@ -251,10 +252,20 @@ def prediction_page(report, changed):
         submit = st.form_submit_button("Estimate waiting time", type="primary")
     if submit:
         try:
-            from src.predict import predict_waiting_time
-            prediction = predict_waiting_time(record)
-            st.metric("Predicted typical waiting time", number(prediction, " days"))
+            from src.explanations import explain_waiting
+            explanation = explain_waiting(record)
+            st.metric("Predicted typical waiting time", number(explanation["prediction"], " days"))
             st.caption("Initial ML baseline — Work in Progress. The estimate is a model output, not a guaranteed date of admission.")
+            st.caption(f"Measured holdout MAE: {number(metadata.get('metrics', {}).get('mae'))} days. This average error is not a personal prediction interval.")
+            st.subheader("Why this estimate?")
+            contributions = pd.DataFrame(explanation["contributions"])
+            chart(px.bar(contributions.sort_values("contribution"), x="contribution", y="label", orientation="h",
+                         color="contribution", color_continuous_scale="Tealrose",
+                         labels={"contribution": "Contribution to raw model estimate (days)", "label": ""}))
+            st.caption(f"SHAP reference {number(explanation['base_value'])} days + signed contributions = raw estimate {number(explanation['raw_prediction'])} days. Nonnegative adjustment: {number(explanation['clipping_adjustment'])} days. Associations learned by the model do not establish causes.")
+            if explanation["unseen_categories"]:
+                st.warning("Some selected categories were not present in training; reliability is uncertain.")
+            st.info("Analyst review: check the profile, historical period and validation error before discussing planning decisions. This estimate does not assign a hospitalization date or route a patient.")
             if end and pd.Timestamp(record["registration_dt"]) > pd.Timestamp(end):
                 st.warning("This date is beyond the evaluation period. Future performance has not been established.")
         except Exception:
@@ -321,15 +332,12 @@ def forecast_page(report, changed):
     if not path.exists():
         st.info("Prepare the referral data before training a forecast.")
         return
-    from src.load_forecast import METADATA_PATH as FORECAST_METADATA_PATH, MODEL_PATH as FORECAST_MODEL_PATH, forecast_status
+    from src.load_forecast import METADATA_PATH as FORECAST_METADATA_PATH, forecast_status
     metadata = read_json(FORECAST_METADATA_PATH)
     status = forecast_status(report)
     if changed or not status["available"]:
-        if changed or status.get("stale"):
-            st.info("Source data changed. Refresh data and retrain this forecast before using it.")
-        else:
-            st.info("No trained 7-day referral forecast is available yet.")
-        if st.button("Train / evaluate 7-day forecast", disabled=changed, type="primary"):
+        st.info("Source data changed. Refresh data first." if changed else status["reason"])
+        if st.button("Train / evaluate 7-day forecast", disabled=changed or st.session_state.get("demo_mode", False), type="primary"):
             try:
                 from src.load_forecast import train_load_forecast
                 with st.spinner("Training the seven-day referral-load prototype on historical hospital/day data…"):
@@ -339,12 +347,23 @@ def forecast_page(report, changed):
             except Exception:
                 import logging
                 logging.getLogger(__name__).exception("Load forecast training failed")
-                st.error("Forecast training could not finish. At least 35 days of hospital history are required.")
+                st.error("Forecast training could not finish. Refresh the prepared data and check the logs; at least 42 days are required for training and validation.")
         return
     metrics = metadata.get("metrics", {})
     for column, (label, key, suffix) in zip(st.columns(4), [("Forecast MAE", "mae", " referrals"), ("Forecast RMSE", "rmse", " referrals"), ("7-day mean baseline MAE", "baseline_mae", " referrals"), ("MAE improvement", "improvement_pct", "%")]):
         column.metric(label, number(metrics.get(key), suffix))
-    st.caption("Metrics use the final seven observed calendar days as a chronological test. Lower MAE is better.")
+    split = metadata.get("split", {})
+    st.caption(f"Historical test: {metadata['test_period']['start'][:10]} to {metadata['test_period']['end'][:10]}. All seven days are predicted from the end of {split['forecast_origin'][:10]}, using only observations available by that date. Lower MAE is better.")
+    st.caption(f"Same-weekday baseline MAE: {number(metrics.get('seasonal_baseline_mae'))} referrals. Test covers {split['test_hospitals']:,} hospitals; {split['excluded_test_hospitals']:,} excluded for insufficient history or incomplete follow-up.")
+    if metrics.get("improvement_pct") is not None and metrics["improvement_pct"] < 0:
+        st.warning("The model did not beat the 7-day mean baseline on this holdout.")
+    if metrics.get("seasonal_baseline_mae") is not None and metrics["mae"] > metrics["seasonal_baseline_mae"]:
+        st.warning("The same-weekday baseline performed better than the model on this holdout.")
+    weaker_horizons = [str(row["horizon"]) for row in metadata.get("metrics_by_horizon", []) if row["mae"] > row["baseline_mae"]]
+    if weaker_horizons:
+        st.caption(f"The 7-day mean baseline performed better at these forecast horizons (days): {', '.join(weaker_horizons)}. See the breakdown below.")
+    with st.expander("Validation by forecast horizon"):
+        st.dataframe(pd.DataFrame(metadata.get("metrics_by_horizon", [])), hide_index=True, width="stretch")
     hospitals = db.aggregate_query(path, "SELECT hospital_mo FROM read_parquet(?) GROUP BY hospital_mo ORDER BY sum(referrals) DESC, hospital_mo")["hospital_mo"].dropna().astype(str).tolist()
     if not hospitals:
         st.info("No hospitals with referral history are available.")
@@ -359,12 +378,21 @@ def forecast_page(report, changed):
         return
     total = float(forecast["predicted_referrals"].sum())
     st.metric("Predicted referrals · next 7 days", number(total))
+    st.caption(f"Historical projection for {forecast['date'].min():%Y-%m-%d} to {forecast['date'].max():%Y-%m-%d}, after the last supplied observation ({metadata['history_end'][:10]}). This is not a forecast for the current calendar week.")
     with st.container(border=True):
         observed = history.loc[:, ["date", "referrals"]].rename(columns={"referrals": "records"}).assign(series="Observed referrals")
         projected = forecast.rename(columns={"predicted_referrals": "records"}).assign(series="Forecast")
         chart(px.line(pd.concat([observed, projected]), x="date", y="records", color="series", markers=True, color_discrete_sequence=[COLORS[0], COLORS[2]], labels={"date": "Date", "records": "Referrals", "series": ""}))
     values = forecast.assign(predicted_referrals=forecast["predicted_referrals"].round(1)).rename(columns={"date": "Forecast date", "predicted_referrals": "Predicted referrals"})
     st.dataframe(values, hide_index=True, width="stretch")
+    with st.expander("Why this daily forecast?"):
+        horizon = st.select_slider("Day ahead to explain", options=list(range(1, 8)), value=1)
+        from src.load_forecast import explain_next_week
+        explanation = explain_next_week(selected, horizon)
+        contributions = pd.DataFrame(explanation["contributions"])
+        chart(px.bar(contributions.sort_values("contribution"), x="contribution", y="label", orientation="h",
+                     labels={"contribution": "Contribution to raw forecast (referrals)", "label": ""}))
+        st.caption(f"Reference {number(explanation['base_value'])} + signed contributions = {number(explanation['raw_prediction'])} before nonnegative adjustment. All observed features stop at {metadata['history_end'][:10]}. Model associations are not causal explanations.")
     with st.expander("Forecast scope and limits"):
         for limitation in metadata.get("limitations", []):
             st.write(f"• {limitation}")
@@ -485,8 +513,8 @@ def treated_context():
 
 
 def pressure_page():
-    title("HOSPITAL ACTIVITY", "Pressure signals, made transparent.", "Historical monitoring of the observed referral cohort. Hospital load forecasting is not yet validated.")
-    st.info("No 7-, 30- or 90-day expected-load forecast is published in this MVP. Complete coverage, operational capacity and longer validated history are needed.")
+    title("HOSPITAL ACTIVITY", "Pressure signals, made transparent.", "Historical monitoring of the observed referral cohort.")
+    st.info("The separate 7-day load forecast page evaluates incoming referrals. Bed occupancy, operational capacity, and 30/90-day forecasts require additional data and validation.")
     cohort, refusal, treated = st.tabs(["Referral cohort", "Separate refusal feed", "Treated-case context"])
     with cohort:
         pressure_cohort()
@@ -536,6 +564,9 @@ def quality_page(report):
     with st.expander("Complete aggregate quality report"):
         st.json(report, expanded=False)
     st.download_button("Download quality report", json.dumps(report, ensure_ascii=False, indent=2), "medflow_data_quality.json", "application/json")
+    with st.expander("All local sources and laboratory coverage"):
+        from src.workbench import source_inventory
+        source_inventory()
 
 
 def main():
@@ -556,12 +587,18 @@ def main():
         st.warning("New or changed source files detected. Displayed analytics belong to the previous preparation run. Select Prepare / refresh data to include the new files.")
     if page in {"Overview", "Hospital explorer"}:
         overview_page(report, filters, explorer=page == "Hospital explorer")
+    elif page == "Compare & review":
+        from src.workbench import comparison_page
+        comparison_page(report, changed)
     elif page == "Waiting time prediction":
         prediction_page(report, changed)
     elif page == "Model performance":
         performance_page(report, changed)
     elif page == "7-day load forecast":
         forecast_page(report, changed)
+    elif page == "Validation evidence":
+        from src.workbench import validation_page
+        validation_page()
     elif page == "Pressure & anomalies":
         pressure_page()
     else:

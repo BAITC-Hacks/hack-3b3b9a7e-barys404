@@ -112,3 +112,48 @@ def pressure_rows(path, hospital=None, start=None, end=None):
         pressure_reason, history_days, anomaly_referrals, anomaly_refusals,
         anomaly_open_cohort_growth
         FROM read_parquet(?) WHERE {where} ORDER BY date DESC, referrals DESC LIMIT 30000""", params)
+
+
+def compare_groups(filters, group_by="hospital_mo", minimum=30, path=ANALYTICAL_PATH):
+    """Descriptive comparisons, never a capacity or clinical-quality ranking."""
+    if group_by not in {"hospital_mo", "region_origin_code"}:
+        raise ValueError("Compare hospitals or origin regions only.")
+    if minimum < 10:
+        raise ValueError("At least ten referrals per comparison group are required.")
+    where, params = cohort_where(filters)
+    return _comparison_query(path, where, params, group_by, minimum)
+
+
+def _comparison_query(path, where, params, group_by, minimum):
+    # Keep the source parameter first; thresholds are validated integers.
+    return aggregate_query(path, f"""
+        WITH source AS (SELECT {group_by}, outcome, target_eligible, wait_days FROM read_parquet(?) WHERE {where})
+        SELECT COALESCE({group_by}, 'Unknown') AS organization_or_region,
+          count(*) AS referrals,
+          count(*) FILTER(WHERE outcome='hospitalized') AS hospitalized,
+          count(*) FILTER(WHERE outcome='refused') AS refused,
+          count(*) FILTER(WHERE outcome='unresolved') AS unresolved,
+          count(*) FILTER(WHERE outcome IN ('invalid_outcome','conflicting')) AS excluded_outcomes,
+          count(*) FILTER(WHERE target_eligible) AS eligible_waits,
+          CASE WHEN count(*) FILTER(WHERE target_eligible) >= {int(minimum)}
+            THEN median(wait_days) FILTER(WHERE target_eligible) END AS median_wait_days,
+          CASE WHEN count(*) FILTER(WHERE target_eligible) >= {int(minimum)}
+            THEN quantile_cont(wait_days, .9) FILTER(WHERE target_eligible) END AS p90_wait_days,
+          CASE WHEN count(*) FILTER(WHERE outcome IN ('hospitalized','refused')) >= {int(minimum)}
+            THEN 100.0 * count(*) FILTER(WHERE outcome='refused') /
+              count(*) FILTER(WHERE outcome IN ('hospitalized','refused')) END AS refusal_share_pct
+        FROM source GROUP BY 1 HAVING count(*) >= {int(minimum)} ORDER BY referrals DESC, organization_or_region
+        """, params)
+
+
+def comparison_trends(filters, group_by, selected, minimum=10, path=ANALYTICAL_PATH):
+    if group_by not in {"hospital_mo", "region_origin_code"} or not 1 <= len(selected) <= 6 or minimum < 10:
+        raise ValueError("Select one to six hospitals/regions; minimum group size is ten.")
+    where, params = cohort_where(filters)
+    placeholders = ','.join('?' for _ in selected)
+    return aggregate_query(path, f"""
+        SELECT COALESCE({group_by}, 'Unknown') AS organization_or_region,
+          CAST(date_trunc('week', registration_dt) AS DATE) AS week, count(*) AS referrals
+        FROM read_parquet(?) WHERE {where} AND COALESCE({group_by}, 'Unknown') IN ({placeholders})
+        GROUP BY 1, 2 HAVING count(*) >= {int(minimum)} ORDER BY week, organization_or_region
+        """, [*params, *selected])

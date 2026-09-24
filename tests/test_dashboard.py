@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.dashboard_data import historical_charts, overview
+from src.dashboard_data import historical_charts, overview, compare_groups, comparison_trends
 
 
 @pytest.fixture
@@ -59,3 +59,23 @@ def test_streamlit_empty_state_never_fabricates_metrics(tmp_path, monkeypatch):
     assert not app.exception
     assert not app.metric
     assert "Your data, ready for decisions." in [heading.value for heading in app.title]
+
+
+def test_comparison_suppresses_small_groups_and_uses_known_outcome_denominator(dashboard_cohort):
+    source = pd.read_parquet(dashboard_cohort)
+    source = pd.concat([source] * 10, ignore_index=True)
+    source.loc[source["hospital_mo"].eq("Other"), "outcome"] = "refused"
+    source.loc[source["hospital_mo"].eq("Other"), "target_eligible"] = False
+    source.to_parquet(dashboard_cohort, index=False)
+    table = compare_groups({}, minimum=10, path=dashboard_cohort).set_index("organization_or_region")
+    assert table.loc["Hospital 'A'", "referrals"] == 20
+    assert table.loc["Hospital 'A'", "median_wait_days"] == 10
+    assert table.loc["Other", "refusal_share_pct"] == 100
+    assert pd.isna(table.loc["Other", "median_wait_days"])
+    assert compare_groups({}, minimum=30, path=dashboard_cohort).empty
+    assert compare_groups({"hospital_mo": "' OR 1=1 --"}, minimum=10, path=dashboard_cohort).empty
+    trends = comparison_trends({}, "hospital_mo", ["Hospital 'A'"], path=dashboard_cohort)
+    assert trends["referrals"].sum() == 20
+    assert "hospitalization_code" not in table.columns
+    with pytest.raises(ValueError):
+        compare_groups({}, group_by="hospitalization_code", path=dashboard_cohort)

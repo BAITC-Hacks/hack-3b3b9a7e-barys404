@@ -9,3 +9,5 @@ Generated Parquet files and quality reports are written to `processed/` and are 
 ```powershell
 .\run.ps1
 ```
+
+For the complete final-demo evidence, use `run.ps1 -Validate` before presenting. The interface lists every local CSV and marks files that are not connected to the hospital pipeline. Oncology and vaccination files are not model inputs. Laboratory research data (EIP) has not yet been provided; no laboratory forecast is claimed.
