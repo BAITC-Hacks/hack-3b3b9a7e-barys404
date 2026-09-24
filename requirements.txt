@@ -6,3 +6,5 @@ scikit-learn>=1.6,<2
 streamlit>=1.63,<2
 plotly>=6,<7
 pytest>=8,<10
+reportlab>=5,<6
+pypdf>=6,<7

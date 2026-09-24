@@ -58,7 +58,7 @@ def test_streamlit_empty_state_never_fabricates_metrics(tmp_path, monkeypatch):
     app = AppTest.from_file(Path(__file__).resolve().parents[1] / "app.py", default_timeout=30).run()
     assert not app.exception
     assert not app.metric
-    assert "Your data, ready for decisions." in [heading.value for heading in app.title]
+    assert "Данные для обоснованных решений" in [heading.value for heading in app.title]
 
 
 def test_comparison_suppresses_small_groups_and_uses_known_outcome_denominator(dashboard_cohort):

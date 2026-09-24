@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import duckdb
+import pandas as pd
 
 from src.config import ANALYTICAL_PATH, DUCKDB_MEMORY_LIMIT, THREAD_COUNT
 
@@ -157,3 +158,85 @@ def comparison_trends(filters, group_by, selected, minimum=10, path=ANALYTICAL_P
         FROM read_parquet(?) WHERE {where} AND COALESCE({group_by}, 'Unknown') IN ({placeholders})
         GROUP BY 1, 2 HAVING count(*) >= {int(minimum)} ORDER BY week, organization_or_region
         """, [*params, *selected])
+
+
+def weekly_activity(filters, selected=None, limit=15, minimum=10, path=ANALYTICAL_PATH):
+    """Dense, bounded weekly grid. Suppressed small cells stay NaN, never zero."""
+    if not 1 <= limit <= 30 or minimum < 10:
+        raise ValueError("Use up to 30 organizations and a suppression threshold of at least 10.")
+    where, params = cohort_where(filters)
+    hospitals = aggregate_query(path, f"""SELECT hospital_mo AS hospital, count(*) AS referrals
+        FROM read_parquet(?) WHERE {where} AND hospital_mo IS NOT NULL
+        GROUP BY hospital_mo ORDER BY referrals DESC, hospital_mo""", params)
+    if selected is not None:
+        hospitals = hospitals.loc[hospitals.hospital.isin(selected)]
+    names = hospitals.head(limit).hospital.tolist()
+    if not names:
+        return pd.DataFrame(columns=["hospital", "week", "referrals", "suppressed", "partial_week"])
+    bounds = aggregate_query(path, "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)").iloc[0]
+    if pd.isna(bounds["first"]) or pd.isna(bounds["last"]):
+        return pd.DataFrame(columns=["hospital", "week", "referrals", "suppressed", "partial_week"])
+    start = max(pd.Timestamp(bounds["first"]).normalize(), pd.Timestamp(filters.get("start") or bounds["first"]).normalize())
+    end = min(pd.Timestamp(bounds["last"]).normalize(), pd.Timestamp(filters.get("end") or bounds["last"]).normalize())
+    if start > end:
+        return pd.DataFrame(columns=["hospital", "week", "referrals", "suppressed", "partial_week"])
+    placeholders = ",".join("?" for _ in names)
+    observed = aggregate_query(path, f"""SELECT hospital_mo AS hospital,
+        CAST(date_trunc('week', registration_dt) AS DATE) AS week, count(*) AS referrals
+        FROM read_parquet(?) WHERE {where} AND hospital_mo IN ({placeholders})
+        GROUP BY 1, 2 ORDER BY week""", [*params, *names])
+    weeks = pd.date_range(start - pd.Timedelta(days=start.weekday()), end, freq="W-MON")
+    index = pd.MultiIndex.from_product([names, weeks], names=["hospital", "week"])
+    grid = observed.set_index(["hospital", "week"]).reindex(index, fill_value=0).reset_index()
+    grid["suppressed"] = grid.referrals.between(1, minimum - 1)
+    grid.loc[grid.suppressed, "referrals"] = float("nan")
+    grid["partial_week"] = (grid.week < start) | ((grid.week + pd.Timedelta(days=6)) > end)
+    return grid
+
+
+def recent_activity(filters, path=ANALYTICAL_PATH):
+    """Compare two full consecutive 7-day windows within the selected source interval."""
+    bounds = aggregate_query(path, "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)").iloc[0]
+    if pd.isna(bounds["first"]) or pd.isna(bounds["last"]):
+        return {}, pd.DataFrame()
+    first = max(pd.Timestamp(bounds["first"]).normalize(), pd.Timestamp(filters.get("start") or bounds["first"]).normalize())
+    end = min(pd.Timestamp(bounds["last"]).normalize(), pd.Timestamp(filters.get("end") or bounds["last"]).normalize())
+    if (end - first).days < 13:
+        return {}, pd.DataFrame()
+    current_start, previous_start = end - pd.Timedelta(days=6), end - pd.Timedelta(days=13)
+    narrowed = {**filters, "start": previous_start.date(), "end": end.date()}
+    where, params = cohort_where(narrowed)
+    # Keep the source placeholder first, then the period boundary and cohort filters.
+    table = aggregate_query(path, f"""WITH source AS (
+        SELECT hospital_mo, registration_dt, region_origin_code, bed_profile FROM read_parquet(?))
+        SELECT hospital_mo AS hospital,
+        count(*) FILTER(WHERE CAST(registration_dt AS DATE) >= CAST(? AS DATE)) AS current,
+        count(*) FILTER(WHERE CAST(registration_dt AS DATE) < CAST(? AS DATE)) AS previous
+        FROM source WHERE {where} GROUP BY hospital_mo ORDER BY current DESC, hospital_mo""",
+        [str(current_start.date()), str(current_start.date()), *params])
+    table["change_pct"] = 100 * (table.current - table.previous) / table.previous.replace(0, float("nan"))
+    period = {"start": str(current_start.date()), "end": str(end.date()),
+              "previous_start": str(previous_start.date()), "previous_end": str((current_start - pd.Timedelta(days=1)).date())}
+    return period, table
+
+
+def hospital_profiles(filters, path=ANALYTICAL_PATH):
+    where, params = cohort_where(filters)
+    return aggregate_query(path, f"""SELECT COALESCE(bed_profile, 'Не указан') AS profile,
+        count(*) AS referrals, count(*) FILTER(WHERE target_eligible) AS eligible,
+        CASE WHEN count(*) FILTER(WHERE target_eligible) >= 10
+        THEN median(wait_days) FILTER(WHERE target_eligible) END AS median_wait
+        FROM read_parquet(?) WHERE {where} GROUP BY 1 ORDER BY referrals DESC, profile LIMIT 8""", params)
+
+
+def representative_profile(hospital, options, path=ANALYTICAL_PATH):
+    """An observed common category combination, never an individual record."""
+    columns = ["hospital_mo", "icd10_ref_diag_code", "bed_profile", "territorial_type", "referral_purpose", "finance_source"]
+    names = ", ".join(columns)
+    table = aggregate_query(path, f"""SELECT {names}, count(*) AS records FROM read_parquet(?)
+        WHERE hospital_mo = ? AND target_eligible GROUP BY {names}
+        HAVING count(*) >= 10 ORDER BY records DESC, {names} LIMIT 100""", [hospital])
+    for row in table.to_dict(orient="records"):
+        if all(row[name] in options.get(name, []) for name in columns):
+            return {name: row[name] for name in columns}
+    return {}

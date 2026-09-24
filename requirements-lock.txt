@@ -42,6 +42,8 @@ python-multipart==0.0.32
 pytz==2026.3.post1
 referencing==0.37.0
 requests==2.34.2
+reportlab==5.0.1
+pypdf==6.19.0
 rpds-py==2026.6.3
 scikit-learn==1.9.1
 scipy==1.18.1

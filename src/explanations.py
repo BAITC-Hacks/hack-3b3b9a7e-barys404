@@ -7,15 +7,25 @@ from src.predict import load_model, load_metadata
 
 
 FEATURE_LABELS = {
-    "hospital_mo": "Hospital", "icd10_ref_diag_code": "Referral diagnosis code",
-    "bed_profile": "Bed profile", "territorial_type": "Territorial type",
-    "referral_purpose": "Referral purpose", "finance_source": "Finance source",
-    "registration_day_of_week": "Registration weekday", "registration_day": "Day of month",
-    "registration_month": "Registration month", "horizon": "Forecast horizon",
-    "target_day_of_week": "Target weekday", "lag_1": "Last observed day",
-    "lag_7": "Observed count six days before origin", "lag_14": "Observed count thirteen days before origin",
-    "mean_7": "Observed 7-day mean", "mean_14": "Observed 14-day mean", "mean_28": "Observed 28-day mean",
+  "hospital_mo": "Стационар",
+  "icd10_ref_diag_code": "Код диагноза направления",
+  "bed_profile": "Профиль койки",
+  "territorial_type": "Территориальный тип",
+  "referral_purpose": "Цель направления",
+  "finance_source": "Источник финансирования",
+  "registration_day_of_week": "День недели регистрации",
+  "registration_day": "День месяца",
+  "registration_month": "Месяц регистрации",
+  "horizon": "День горизонта",
+  "target_day_of_week": "День недели прогноза",
+  "lag_1": "Последний наблюдённый день",
+  "lag_7": "За 6 дней до начала прогноза",
+  "lag_14": "За 13 дней до начала прогноза",
+  "mean_7": "Среднее за 7 дней",
+  "mean_14": "Среднее за 14 дней",
+  "mean_28": "Среднее за 28 дней"
 }
+
 
 
 def explain_model(model, features, categorical):
