@@ -15,7 +15,7 @@ RANDOM_SEED = 42
 # Three referral source parts require more than 1 GB while a cleaned DuckDB
 # table is materialized. Deployments with a smaller budget can still override
 # this explicitly with MEDFLOW_MEMORY_LIMIT.
-DUCKDB_MEMORY_LIMIT = os.environ.get("MEDFLOW_MEMORY_LIMIT", "2GB")
+DUCKDB_MEMORY_LIMIT = os.environ.get("MEDFLOW_MEMORY_LIMIT", "4GB")
 THREAD_COUNT = min(4, os.cpu_count() or 1)
 MODEL_PATH = MODELS_DIR / "waiting_time_catboost.cbm"
 METADATA_PATH = MODELS_DIR / "model_metadata.json"
