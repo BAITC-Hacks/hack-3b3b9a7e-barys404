@@ -21,16 +21,17 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from src import config
 from src.feature_engineering import CATEGORICAL_FEATURES, FEATURE_COLUMNS, category_options, make_features
 from src.utils import write_json
+from src.waiting_estimator import calibrated_predictions, fit_calibration
 
 LOGGER = logging.getLogger(__name__)
-MODEL_VERSION = "waiting-catboost-temporal-v2"
+MODEL_VERSION = config.WAITING_MODEL_VERSION
 MODEL_PARAMETERS = {
     "iterations": 300,
     "depth": 6,
     "learning_rate": 0.06,
     "loss_function": "MAE",
     "random_seed": config.RANDOM_SEED,
-    "thread_count": config.THREAD_COUNT,
+    "thread_count": min(2, config.THREAD_COUNT),
     "allow_writing_files": False,
     "verbose": False,
 }
@@ -163,9 +164,19 @@ def train_model(force_preprocess: bool = False) -> dict:
     model = CatBoostRegressor(**MODEL_PARAMETERS)
     LOGGER.info("Training CatBoost on %s rows; test is untouched by fitting.", len(train))
     model.fit(x_train, y_train, cat_features=CATEGORICAL_FEATURES)
-    # The same nonnegative post-processing is applied in predict.py.
-    prediction = np.maximum(0.0, model.predict(x_test))
+    raw_prediction = model.predict(x_test)
+    calibration = fit_calibration(x_train, y_train)
+    prediction, methods, _ = calibrated_predictions(x_test, raw_prediction, calibration)
     metrics = regression_metrics(y_test, prediction, float(np.median(y_train)))
+    raw_metrics = regression_metrics(y_test, np.maximum(0, raw_prediction), float(np.median(y_train)))
+    scored = test[["hospital_mo", "bed_profile"]].copy()
+    scored["absolute_error"] = np.abs(y_test - prediction)
+    scored["actual"], scored["prediction"] = y_test, prediction
+    group_metrics = scored.groupby(["hospital_mo", "bed_profile"]).agg(
+        observations=("actual", "size"), mae=("absolute_error", "mean"),
+        observed_median=("actual", "median"), predicted_median=("prediction", "median"),
+    ).reset_index()
+    group_metrics = group_metrics.loc[group_metrics.observations >= 30]
     importance = sorted(
         [{"feature": feature, "importance": float(value)} for feature, value in zip(FEATURE_COLUMNS, model.feature_importances_)],
         key=lambda row: row["importance"], reverse=True,
@@ -173,7 +184,7 @@ def train_model(force_preprocess: bool = False) -> dict:
     aggregated = aggregate_predictions(y_test, prediction)
     metadata = {
         "model_version": MODEL_VERSION,
-        "model_type": "CatBoostRegressor",
+        "model_type": "Training-only hospital/profile median; CatBoost for sparse hospitals",
         "training_date": datetime.now(timezone.utc).isoformat(),
         "source_fingerprint": report.get("source_fingerprint"),
         "source_coverage": report.get("coverage", report.get("source_files", {})),
@@ -185,6 +196,8 @@ def train_model(force_preprocess: bool = False) -> dict:
         "features": FEATURE_COLUMNS,
         "categorical_features": CATEGORICAL_FEATURES,
         "feature_options": category_options(x_train),
+        "calibration": calibration,
+        "estimator_selection": "Compared fixed candidate losses and cohort rules on a chronological validation subset of registration dates before 2025-03-14. Final March 14-31 registration holdout was not used to select the serving rule. Earlier expanding-window checks overlap selection data and are exploratory, not independent confirmation.",
         "excluded_predictors": ["hospitalization_code", "patient_seq_no", "hospitalization_dt", "refusal_dt", "planned_dt", "sdu_load_date", "outcome", "wait_days", "future_aggregates", "treated_cases_2026"],
         "rows": {"analytical": len(frame), "train": len(train), "test": len(test), "excluded_from_model": len(frame) - len(train) - len(test)},
         "train_period": _period(train),
@@ -195,17 +208,21 @@ def train_model(force_preprocess: bool = False) -> dict:
         "source_referral_date_quality": report.get("datasets", {}).get("referrals", {}).get("dates", {}),
         "cleaning_policy": report.get("policy", {}),
         "metrics": metrics,
+        "raw_catboost_metrics": raw_metrics,
+        "prediction_methods_on_test": pd.Series(methods).value_counts().astype(int).to_dict(),
+        "group_metrics": group_metrics.to_dict(orient="records"),
         "feature_importance": importance,
         "actual_vs_predicted": aggregated,
         "actual_vs_predicted_min_group_size": 10,
         "actual_vs_predicted_suppressed_rows": len(test) - sum(row["count"] for row in aggregated),
-        "prediction_postprocessing": "clip negative predictions to zero; identical during evaluation and inference",
+        "prediction_postprocessing": "supported training hospital/profile median, then hospital median; CatBoost for sparse hospitals, invalid outputs use training profile/global median; identical at evaluation and inference",
         "training_seconds": round(time.monotonic() - started, 2),
         "limitations": [
             "Initial ML baseline — Work in Progress; an operational decision-support estimate, not a clinical recommendation.",
             "Only supplied CSV parts are represented; this is not a complete national cohort.",
             "Trained and evaluated only on observed hospitalizations with eligible 0–90 day waits. Refusals and unresolved outcomes are excluded: this creates selection bias and right-censoring, especially near the end of follow-up.",
-            "MAE loss estimates the conditional median (typical wait), not the mathematical expected wait or remaining waiting time of a current queue.",
+            "The estimate is a supported training-cohort median, with CatBoost MAE for sparse hospitals; it is not remaining waiting time in a current queue.",
+            "For cohort-median estimates, diagnosis/date/territorial type/purpose/finance do not change the hospital/profile estimate. The interface exposes the method rather than inventing SHAP factors.",
             "Training labels recorded on or after the test boundary are purged; no features from future outcomes or 2026 treated-case aggregates are used.",
             "One chronological holdout is an initial estimate, without confidence intervals, external validation, or hyperparameter tuning on the test set.",
             "Short historical coverage does not validate deployment in 2026 or reliable 30/90-day hospital-load forecasts.",

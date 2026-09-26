@@ -19,6 +19,7 @@ DUCKDB_MEMORY_LIMIT = os.environ.get("MEDFLOW_MEMORY_LIMIT", "2GB")
 THREAD_COUNT = min(4, os.cpu_count() or 1)
 MODEL_PATH = MODELS_DIR / "waiting_time_catboost.cbm"
 METADATA_PATH = MODELS_DIR / "model_metadata.json"
+WAITING_MODEL_VERSION = "waiting-hybrid-temporal-v3"
 ANALYTICAL_PATH = PROCESSED_DIR / "analytical.parquet"
 QUALITY_PATH = PROCESSED_DIR / "data_quality_report.json"
 

@@ -49,7 +49,7 @@ def check_demo(include_ui=False):
                 checks["waiting_prediction_and_explanation"] = (
                     not app.exception and not app.error
                     and any(item.label == "Прогноз типичного ожидания" for item in app.metric)
-                    and len(app.get("plotly_chart")) > 0)
+                    and (len(app.get("plotly_chart")) > 0 or any("Основа оценки" in item.value for item in app.info)))
             if page == "7-day load forecast":
                 checks["weekly_forecast_and_explanation"] = (
                     any(item.label == "Прогноз направлений за 7 дней" for item in app.metric)

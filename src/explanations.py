@@ -4,6 +4,7 @@ import numpy as np
 
 from src.feature_engineering import CATEGORICAL_FEATURES, make_features
 from src.predict import load_model, load_metadata
+from src.waiting_estimator import calibrated_predictions
 
 
 FEATURE_LABELS = {
@@ -50,7 +51,19 @@ def explain_model(model, features, categorical):
 def explain_waiting(record):
     features = make_features(record)
     metadata = load_metadata()
-    result = explain_model(load_model(), features, CATEGORICAL_FEATURES)
+    model = load_model()
+    raw = float(model.predict(features)[0])
+    prediction, methods, support = calibrated_predictions(features, [raw], metadata.get("calibration"))
+    method = str(methods[0])
+    if method == "catboost":
+        result = explain_model(model, features, CATEGORICAL_FEATURES)
+    else:
+        value = float(prediction[0])
+        result = {"prediction": value, "raw_prediction": value, "base_value": value,
+                  "clipping_adjustment": 0., "contributions": []}
+    result.update(method=method, support=int(support[0]),
+                  catboost_raw_prediction=raw,
+                  training_cutoff=metadata.get("split", {}).get("test_start", "")[:10])
     result["unseen_categories"] = [name for name in CATEGORICAL_FEATURES
                                    if features.iloc[0][name] not in metadata.get("feature_options", {}).get(name, [])]
     return result

@@ -8,7 +8,7 @@ import streamlit as st
 
 from src import dashboard_data as db
 from src.config import ANALYTICAL_PATH, METADATA_PATH
-from src.navigation import go_to, hospital_picker
+from src.navigation import go_to, hospital_picker, role_actions
 from src.ui import chart, count, number, title, read_json
 
 
@@ -106,9 +106,10 @@ def executive_page(report, filters):
             chart(px.area(weekly, x="week", y="referrals", labels={"week": "Неделя регистрации", "referrals": "Направления"}), 250)
             st.caption("Шесть крупнейших организаций по объёму в выбранной когорте. Недели с подавленными малыми группами не суммируются; крайние недели могут быть неполными.")
     with right, st.container(border=True):
-        st.subheader("Рабочий маршрут")
-        st.write("1. Найдите изменение потока.\n\n2. Сравните организации и профили.\n\n3. Посмотрите прогноз и его ошибку.\n\n4. Подготовьте сводку для специалиста.")
-        st.button("Перейти к сравнению", on_click=go_to, args=("Compare & review",), width="stretch")
+        st.subheader("Быстрые действия")
+        for index, (label, page) in enumerate(role_actions()):
+            st.button(label, key=f"overview_action_{index}", on_click=go_to,
+                      args=(page,), width="stretch", type="primary" if index == 0 else "secondary")
     attention(filters)
     heatmap(filters)
 

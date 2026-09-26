@@ -22,10 +22,11 @@ from src.data_loader import source_fingerprint
 from src.feature_engineering import CATEGORICAL_FEATURES, make_features
 from src.train_waiting_model import MODEL_PARAMETERS, regression_metrics
 from src.utils import read_json, write_json
+from src.waiting_estimator import VERSION as WAITING_ESTIMATOR_VERSION, calibrated_predictions, fit_calibration
 
 LOGGER = logging.getLogger(__name__)
 REPORT_PATH = config.MODELS_DIR / "temporal_validation.json"
-VALIDATION_VERSION = 1
+VALIDATION_VERSION = 2
 FOLDS = 3
 WAIT_TEST_DAYS = 14
 MIN_GROUP_SIZE = 30
@@ -33,6 +34,7 @@ MIN_GROUP_SIZE = 30
 
 def protocol_signature():
     protocol = {"version": VALIDATION_VERSION, "folds": FOLDS, "wait_days": WAIT_TEST_DAYS,
+                "waiting_estimator": WAITING_ESTIMATOR_VERSION,
                 "waiting_parameters": MODEL_PARAMETERS, "forecast_parameters": forecast.MODEL_PARAMETERS,
                 "forecast_version": forecast.MODEL_VERSION}
     return hashlib.sha256(json.dumps(protocol, sort_keys=True).encode()).hexdigest()
@@ -98,7 +100,8 @@ def validate_waiting(frame):
                     start.date(), end.date(), len(train), len(test), purged)
         model = CatBoostRegressor(**MODEL_PARAMETERS)
         model.fit(make_features(train), train["wait_days"], cat_features=CATEGORICAL_FEATURES)
-        predicted = np.maximum(0, model.predict(make_features(test)))
+        predicted, _, _ = calibrated_predictions(make_features(test), model.predict(make_features(test)),
+                                                  fit_calibration(make_features(train), train["wait_days"]))
         median = float(train["wait_days"].median())
         fold = {"test_start": start.date().isoformat(), "test_end": end.date().isoformat(),
                 "train_rows": len(train), "test_rows": len(test), "purged_labels": purged,
@@ -172,12 +175,13 @@ def run_validation(force=False):
     report = {"created_at": datetime.now(timezone.utc).isoformat(), "source_fingerprint": quality["source_fingerprint"],
               "validation_version": VALIDATION_VERSION, "protocol_signature": protocol_signature(),
               "parameters_selected_on_test": False, "deployment_models_modified": False,
+              "estimator_selection_overlap": "Waiting estimator selection used an internal pre-March-14 chronological validation subset. Earlier folds overlap that selection history; report is exploratory rather than independent confirmation of the selected rule.",
               "waiting": waiting, "forecast": referral_load, "seconds": round(time.monotonic() - started, 2),
               "limitations": ["Only 90 historical registration days are available in the current extract.",
                               "Expanding training windows, disjoint test windows; later folds may learn outcomes from earlier folds only once available.",
                               "Retrospective exports do not establish historical data-arrival times or revisions.",
                               "Error quantiles are descriptive held-out errors, not prediction intervals or coverage guarantees.",
-                              "No test-based hyperparameter tuning; these results do not validate live deployment or clinical decisions."]}
+                              "Fixed hyperparameters per fold; earlier waiting folds overlap estimator-selection data. These results do not validate live deployment or clinical decisions."]}
     write_json(REPORT_PATH, report)
     return report
 

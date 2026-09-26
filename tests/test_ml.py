@@ -5,6 +5,7 @@ import pytest
 
 from src.feature_engineering import CATEGORICAL_FEATURES, FEATURE_COLUMNS, make_features
 from src.train_waiting_model import aggregate_predictions, chronological_split, regression_metrics
+from src.waiting_estimator import calibrated_predictions, fit_calibration
 
 
 def test_feature_allowlist_excludes_identifiers_and_all_outcomes():
@@ -95,9 +96,10 @@ def test_persisted_model_inference_matches_evaluation_and_refuses_stale_data(tmp
     monkeypatch.setattr(config, "QUALITY_PATH", tmp_path / "quality.json")
     monkeypatch.setattr(predict, "source_fingerprint", lambda: "current")
     fitted.save_model(str(config.MODEL_PATH))
-    write_json(config.METADATA_PATH, {"source_fingerprint": "current"})
+    calibration = fit_calibration(features, np.arange(12, dtype=float))
+    write_json(config.METADATA_PATH, {"source_fingerprint": "current", "model_version": config.WAITING_MODEL_VERSION, "calibration": calibration})
     write_json(config.QUALITY_PATH, {"source_fingerprint": "current", "pipeline_complete": True})
-    expected = np.maximum(0, fitted.predict(features))
+    expected, _, _ = calibrated_predictions(features, fitted.predict(features), calibration)
     np.testing.assert_allclose(predict.predict_batch(frame), expected)
     assert predict.predict_waiting_time(frame.iloc[0].to_dict()) == pytest.approx(expected[0])
     write_json(config.QUALITY_PATH, {"source_fingerprint": "current", "pipeline_complete": False})
@@ -107,3 +109,53 @@ def test_persisted_model_inference_matches_evaluation_and_refuses_stale_data(tmp
     assert predict.model_status()["stale"] is True
     with pytest.raises(FileNotFoundError, match="changed"):
         predict.predict_waiting_time(frame.iloc[0].to_dict())
+
+
+def test_supported_cohort_estimate_overrides_invalid_pooled_prediction():
+    train = make_features(pd.DataFrame({"hospital_mo": ["H"] * 10, "bed_profile": ["P"] * 10, "registration_dt": "2025-01-01"}))
+    calibration = fit_calibration(train, [5.] * 10)
+    result, method, support = calibrated_predictions(train.iloc[:1], [-0.5], calibration)
+    assert result.tolist() == [5.]
+    assert method.tolist() == ["hospital_profile_median"]
+    assert support.tolist() == [10]
+    # Only provided training labels enter the artifact; no held-out rows needed.
+    assert calibration["global"] == {"median": 5., "count": 10}
+
+
+def test_sparse_and_unseen_groups_have_explicit_data_based_fallbacks():
+    train = make_features(pd.DataFrame({"hospital_mo": ["H"] * 10 + ["Sparse"], "bed_profile": ["P"] * 11, "registration_dt": "2025-01-01"}))
+    calibration = fit_calibration(train, [4.] * 10 + [2.])
+    rows = make_features(pd.DataFrame({"hospital_mo": ["Sparse", "Unseen", "Sparse", "H", "Unseen"], "bed_profile": ["P", "P", "P", "Q", "Q"], "registration_dt": "2025-03-31"}, index=[9, 2, 7, 4, 1]))
+    result, method, support = calibrated_predictions(rows, [3., 9., -1., 8., -3.], calibration)
+    assert result.tolist() == [3., 4., 4., 4., 4.]
+    assert method.tolist() == ["catboost", "profile_median", "profile_median", "hospital_median", "global_median"]
+    assert support.tolist() == [0, 11, 11, 10, 11]
+
+
+def test_real_same_day_median_is_not_replaced_with_arbitrary_floor():
+    train = make_features(pd.DataFrame({"hospital_mo": ["H"] * 10, "bed_profile": ["P"] * 10, "registration_dt": "2025-01-01"}))
+    calibration = fit_calibration(train, np.zeros(10))
+    result, method, _ = calibrated_predictions(train.iloc[:1], [-1.], calibration)
+    assert result[0] == 0
+    assert method[0] == "hospital_profile_median"
+    with pytest.raises(ValueError, match="invalid values"):
+        calibrated_predictions(train.iloc[:1], [np.nan], calibration)
+    with pytest.raises(ValueError, match="Missing waiting calibration"):
+        calibrated_predictions(train.iloc[:1], [-1.], None)
+    with pytest.raises(ValueError, match="nonnegative"):
+        fit_calibration(train, [-1.] * 10)
+
+
+def test_cohort_explanation_does_not_invent_shap_contributions(monkeypatch):
+    from src import explanations
+    train = make_features(pd.DataFrame({"hospital_mo": ["H"] * 10, "bed_profile": ["P"] * 10, "registration_dt": "2025-01-01"}))
+    monkeypatch.setattr(explanations, "load_metadata", lambda: {"calibration": fit_calibration(train, [5.] * 10), "split": {"test_start": "2025-03-14"}})
+    class NegativeModel:
+        def predict(self, features):
+            return [-0.5]
+    monkeypatch.setattr(explanations, "load_model", lambda: NegativeModel())
+    result = explanations.explain_waiting({"hospital_mo": "H", "bed_profile": "P", "registration_dt": "2025-03-31"})
+    assert result["prediction"] == 5.
+    assert result["catboost_raw_prediction"] == -0.5
+    assert result["contributions"] == []
+    assert result["support"] == 10

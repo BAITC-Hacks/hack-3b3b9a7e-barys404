@@ -2,6 +2,7 @@
 from datetime import date
 from html import escape
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -9,21 +10,51 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.config import ANALYTICAL_PATH, METADATA_PATH, MODEL_PATH, PROCESSED_DIR, QUALITY_PATH
+from src.config import (ANALYTICAL_PATH, DATA_DIR, METADATA_PATH, MODEL_PATH,
+                        PROCESSED_DIR, QUALITY_PATH, ensure_directories)
 from src import dashboard_data as db
-from src.navigation import PAGE_NAMES, SECTIONS, hospital_picker
+from src.navigation import (DEFAULT_HOSPITAL_TYPE, DEFAULT_ROLE,
+                            HOSPITAL_TYPE_NAMES, PAGE_NAMES, ROLE_NAMES,
+                            current_hospital_type, current_role, hospital_picker,
+                            sections_for_role)
 from src.localization import LABELS, display_frame
 
 
 COLORS = ["#087F8C", "#3969B3", "#E5A24A", "#9073BA"]
-PAGES = [page for pages in SECTIONS.values() for page in pages]
-
-
 def read_json(path):
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
+
+
+def save_uploaded_csvs(uploaded_files, raw_dir=None):
+    """Atomically store new local CSVs without silently replacing a source."""
+    raw_dir = Path(raw_dir or DATA_DIR / "raw")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    prepared, existing, conflicts = [], [], []
+    for uploaded in uploaded_files:
+        name = Path(uploaded.name).name
+        if name != uploaded.name or Path(name).suffix.lower() != ".csv":
+            raise ValueError(f"Недопустимое имя файла: {uploaded.name}")
+        data = uploaded.getvalue()
+        target = raw_dir / name
+        if target.exists():
+            if target.read_bytes() == data:
+                existing.append(name)
+            else:
+                conflicts.append(name)
+        else:
+            prepared.append((target, data))
+    if conflicts:
+        return [], existing, conflicts
+    saved = []
+    for target, data in prepared:
+        temporary = target.with_suffix(target.suffix + ".upload")
+        temporary.write_bytes(data)
+        os.replace(temporary, target)
+        saved.append(target.name)
+    return saved, existing, []
 
 
 @st.cache_data(show_spinner=False)
@@ -66,12 +97,22 @@ def theme():
     .block-container {padding-top: 1.6rem; padding-bottom: 2rem; max-width: 1460px;}
     .context-strip {display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 24px;}
     .context-strip span {padding:7px 12px; border:1px solid #dce8ec; background:#eff6f7; border-radius:8px; font-size:13px; color:#31566a;}
+    .role-chip {display:inline-flex; align-items:center; gap:7px; margin:-8px 0 22px; padding:6px 11px; border-radius:999px; background:#e9f5f4; color:#096c74; font-size:12px; font-weight:700;}
+    .role-chip:before {content:""; width:7px; height:7px; border-radius:50%; background:#0c8991;}
+    .data-status {display:flex; align-items:center; gap:8px; margin:4px 0 18px; padding:9px 11px; border-radius:9px; background:#f3f7f9; color:#466274; font-size:12px; font-weight:650;}
+    .data-status.ready:before, .data-status.empty:before {content:""; width:8px; height:8px; border-radius:50%;}
+    .data-status.ready:before {background:#168b70;}
+    .data-status.empty:before {background:#d99a2b;}
+    .empty-steps {display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:22px 0;}
+    .empty-step {background:#fff; border:1px solid #dfe8ed; border-radius:14px; padding:18px; min-height:112px; box-shadow:0 5px 18px #173e550d;}
+    .empty-step b {display:block; color:#0b7780; font-size:12px; letter-spacing:.08em; margin-bottom:8px;}
+    .empty-step span {color:#17384b; font-size:16px; font-weight:700;}
     [data-testid="stMetric"] {box-shadow:0 3px 12px #173e5510; border-top:3px solid #168b94 !important;}
     [data-testid="stVerticalBlockBorderWrapper"] {border-radius:14px;}
     [data-testid="stSidebar"] .stButton button {border-radius:9px;}
     [data-testid="stDataFrame"] {background:#fff;}
     .stButton button {min-height:42px;}
-    @media (max-width:800px) { .block-container {padding:1rem;} h1 {font-size:1.8rem !important;} }
+    @media (max-width:800px) { .block-container {padding:1rem;} h1 {font-size:1.8rem !important;} .empty-steps {grid-template-columns:1fr;} }
     [data-testid="stSidebar"] {border-right: 1px solid #e3eaf1;}
     [data-testid="stMetric"] {background:white; border:1px solid #e3eaf1; border-radius:12px; padding:18px 16px; min-height:122px;}
     [data-testid="stMetricLabel"] {font-size:14px; color:#60758a;}
@@ -93,6 +134,8 @@ def title(kicker, heading, subtitle):
     st.markdown(f'<div class="eyebrow">{escape(kicker)}</div>', unsafe_allow_html=True)
     st.title(heading)
     st.markdown(f'<div class="intro">{escape(subtitle)}</div>', unsafe_allow_html=True)
+    context = f"{ROLE_NAMES[current_role()]} · {HOSPITAL_TYPE_NAMES[current_hospital_type()]} больница"
+    st.markdown(f'<div class="role-chip">{escape(context)}</div>', unsafe_allow_html=True)
 
 
 def coverage_note(report):
@@ -109,28 +152,38 @@ def coverage_note(report):
 def sidebar(report, ready):
     with st.sidebar:
         st.markdown('<div class="brand">MEDFLOW <span>AI</span></div><div class="brand-sub">АНАЛИТИКА ГОСПИТАЛЬНЫХ ПОТОКОВ</div>', unsafe_allow_html=True)
-        section = st.radio("Раздел", list(SECTIONS), key="nav_section", label_visibility="collapsed")
-        pages = SECTIONS[section]
+        if st.session_state.get("user_role") not in ROLE_NAMES:
+            st.session_state["user_role"] = DEFAULT_ROLE
+        if st.session_state.get("hospital_type") not in HOSPITAL_TYPE_NAMES:
+            st.session_state["hospital_type"] = DEFAULT_HOSPITAL_TYPE
+        role = st.selectbox("Ваша роль", list(ROLE_NAMES), format_func=ROLE_NAMES.get, key="user_role")
+        st.selectbox("Тип больницы", list(HOSPITAL_TYPE_NAMES), format_func=HOSPITAL_TYPE_NAMES.get, key="hospital_type")
+        sections = sections_for_role(role)
+        previous_role = st.session_state.get("_rendered_role")
+        if previous_role != role or st.session_state.get("nav_section") not in sections:
+            st.session_state["nav_section"] = next(iter(sections))
+            st.session_state["nav_page"] = sections[st.session_state["nav_section"]][0]
+        st.session_state["_rendered_role"] = role
+        status_class, status_text = ("ready", "Данные готовы") if ready else ("empty", "Данные не подключены")
+        st.markdown(f'<div class="data-status {status_class}">{status_text}</div>', unsafe_allow_html=True)
+        section = st.radio("Раздел", list(sections), key="nav_section", label_visibility="collapsed")
+        pages = sections[section]
         if st.session_state.get("nav_page") not in pages:
             st.session_state["nav_page"] = pages[0]
         if len(pages) > 1:
             page = st.radio("Страница", pages, format_func=PAGE_NAMES.get, key="nav_page", label_visibility="collapsed")
         else:
             page = pages[0]
-        st.divider()
-        st.session_state.setdefault("demo_mode", ready)
-        st.toggle("Деморежим", key="demo_mode", help="Блокирует подготовку данных и обучение во время выступления.")
         if ready:
             from src.experience import start_demo
             st.button("Показать пример", on_click=start_demo, width="stretch", type="primary")
-        st.caption("Исторические данные · прототип")
         note = coverage_note(report)
         if note:
             st.caption(note)
         filters = dict(st.session_state.get("analysis_filters", {}))
         if ready and page in {"Overview", "Hospital explorer", "Compare & review"}:
             st.divider()
-            st.markdown("**Общий контекст анализа**")
+            st.markdown("**Фильтры**")
             dimensions = cached_dimensions(db.file_version(ANALYTICAL_PATH))
             for field, label in [("region_origin_code", "Регион происхождения"), ("bed_profile", "Профиль койки")]:
                 if f"filter_{field}" not in st.session_state:
@@ -149,9 +202,13 @@ def sidebar(report, ready):
                     filters["start"] = filters["end"] = selected[0]
             st.session_state["analysis_filters"] = filters
             st.caption("Фильтры выбирают когорту по регистрации. Исходы могут наступить позже. Прогноз потока использует полную историю организации.")
-        with st.expander("Обслуживание данных"):
+        with st.expander("Данные и настройки"):
+            st.session_state.setdefault("demo_mode", ready)
+            st.toggle("Деморежим", key="demo_mode", help="Блокирует подготовку данных и обучение во время показа.")
+            if ready:
+                upload_sources("sidebar")
             refresh = st.button("Подготовить / обновить данные", width="stretch", disabled=st.session_state.get("demo_mode", False))
-            st.caption("Подготовка обновляет данные. Обучение запускается отдельно; в деморежиме оба действия заблокированы.")
+            st.caption("Исторические данные · прототип")
     return page, filters, refresh
 
 
@@ -179,12 +236,53 @@ def prepare_data():
         logging.getLogger(__name__).exception("Dashboard data preparation failed")
 
 
+def upload_sources(key_prefix="main"):
+    uploaded = st.file_uploader(
+        "Загрузить CSV",
+        type=["csv"],
+        accept_multiple_files=True,
+        key=f"{key_prefix}_source_upload",
+        help="Можно выбрать все части выгрузок одновременно.",
+    )
+    if not uploaded:
+        st.caption("Выберите выгрузки ожидающих и направлений. Остальные источники можно добавить вместе с ними.")
+        return
+    total_mb = sum(item.size for item in uploaded) / 1_000_000
+    st.caption(f"Выбрано файлов: {len(uploaded)} · {total_mb:.1f} МБ")
+    if not st.button("Загрузить и подготовить", key=f"{key_prefix}_upload_button", type="primary", width="stretch",
+                     disabled=key_prefix == "sidebar" and st.session_state.get("demo_mode", False)):
+        return
+    try:
+        ensure_directories()
+        saved, existing, conflicts = save_uploaded_csvs(uploaded)
+        if conflicts:
+            st.error("Файлы с такими именами уже есть и отличаются: " + ", ".join(conflicts) + ". Переименуйте новые файлы.")
+            return
+        from src.data_loader import discover_files
+        discovered = discover_files()
+        missing = [label for category, label in (("waiting", "ожидающие"), ("referrals", "направления")) if not discovered[category]]
+        if missing:
+            st.success(f"Сохранено новых файлов: {len(saved)}. Уже были загружены: {len(existing)}.")
+            st.warning("Для подготовки добавьте: " + " и ".join(missing) + ".")
+            return
+        prepare_data()
+    except (OSError, ValueError) as exc:
+        st.error(str(exc))
+
+
 def empty_state():
-    title("GOVTECH / КЕЙС 1", "Данные для обоснованных решений", "MedFlow AI · Госпитальные потоки и ожидание госпитализации в Казахстане.")
-    st.info("Подготовьте CSV-файлы, чтобы рассчитать показатели и открыть аналитику.")
-    st.markdown("Поместите CSV в `data/` или `data/raw/` и нажмите **Подготовить / обновить данные**. Части направлений и отказов обнаруживаются автоматически.")
-    st.code("python -m src.preprocessing\npython -m src.train_waiting_model\nstreamlit run app.py", language="bash")
-    st.caption("Показатели появятся после обработки файлов. Приложение поддерживает управленческий анализ и не даёт медицинских назначений.")
+    title("GOVTECH / КЕЙС 1", "Загрузите данные", "Выберите CSV-файлы — MedFlow проверит их и откроет рабочую сводку.")
+    st.markdown("""<div class="empty-steps">
+      <div class="empty-step"><b>01</b><span>Выберите CSV</span></div>
+      <div class="empty-step"><b>02</b><span>Нажмите «Загрузить»</span></div>
+      <div class="empty-step"><b>03</b><span>Откройте сводку</span></div>
+    </div>""", unsafe_allow_html=True)
+    left, right = st.columns([1.2, 1])
+    with left:
+        with st.container(border=True):
+            upload_sources("empty")
+    with right, st.expander("Запуск из терминала"):
+        st.code("python -m src.preprocessing\npython -m src.train_waiting_model\nstreamlit run app.py", language="bash")
 
 
 def model_training_control(changed):
@@ -242,11 +340,14 @@ def prediction_page(report, changed):
             st.caption("Это оценка модели, а не гарантированная дата госпитализации.")
             st.caption(f"MAE на временном тесте: {number(metadata.get('metrics', {}).get('mae'))} дня. Средняя ошибка не является персональным интервалом прогноза.")
             st.subheader("Что повлияло на оценку?")
-            contributions = pd.DataFrame(explanation["contributions"])
-            chart(px.bar(contributions.sort_values("contribution"), x="contribution", y="label", orientation="h",
-                         color="contribution", color_continuous_scale="Tealrose",
-                         labels={"contribution": "Вклад в оценку, дни", "label": ""}))
-            st.caption(f"SHAP: базовое значение {number(explanation['base_value'])} дня + вклады признаков = {number(explanation['raw_prediction'])} дня. Коррекция до неотрицательного значения: {number(explanation['clipping_adjustment'])}. Это связи внутри модели, не доказанные причины.")
+            if explanation["contributions"]:
+                contributions = pd.DataFrame(explanation["contributions"])
+                chart(px.bar(contributions.sort_values("contribution"), x="contribution", y="label", orientation="h",
+                             color="contribution", color_continuous_scale="Tealrose",
+                             labels={"contribution": "Вклад в оценку, дни", "label": ""}))
+                st.caption(f"SHAP: базовое значение {number(explanation['base_value'])} дня + вклады признаков = {number(explanation['raw_prediction'])} дня. Это связи внутри модели, не доказанные причины.")
+            else:
+                st.info(f"Основа оценки: медиана завершённых случаев из обучающей истории ({explanation['method']}, {explanation['support']} случаев, до {explanation['training_cutoff']}). Диагноз и дата не меняют эту групповую оценку.")
             if explanation["unseen_categories"]:
                 st.warning("Некоторые категории не встречались при обучении; надёжность такой оценки не установлена.")
             st.info("Перед обсуждением со специалистом проверьте профиль, период данных и ошибку модели. Прогноз не назначает дату госпитализации и не маршрутизирует пациента.")
@@ -297,8 +398,8 @@ def performance_page(report, changed):
         else:
             st.info("Нет достаточно крупных групп для графика.")
     with right, st.container(border=True):
-        st.subheader("Важность признаков")
-        st.caption("Вклад в поведение модели; причинность не установлена")
+        st.subheader("Важность признаков CatBoost")
+        st.caption("Относится только к ветке CatBoost для редкой истории, не к групповым медианам. Причинность не установлена.")
         importance = pd.DataFrame(meta.get("feature_importance", []))
         if not importance.empty and {"feature", "importance"}.issubset(importance.columns):
             from src.explanations import FEATURE_LABELS

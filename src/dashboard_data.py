@@ -125,8 +125,16 @@ def compare_groups(filters, group_by="hospital_mo", minimum=30, path=ANALYTICAL_
     return _comparison_query(path, where, params, group_by, minimum)
 
 
-def _comparison_query(path, where, params, group_by, minimum):
+def hospital_directory(filters, path=ANALYTICAL_PATH):
+    """List every observed hospital; suppress unstable rates for small groups."""
+    where, params = cohort_where(filters)
+    return _comparison_query(path, f"({where}) AND hospital_mo IS NOT NULL", params,
+                             "hospital_mo", minimum=1, metric_minimum=10)
+
+
+def _comparison_query(path, where, params, group_by, minimum, metric_minimum=None):
     # Keep the source parameter first; thresholds are validated integers.
+    metric_minimum = int(metric_minimum if metric_minimum is not None else minimum)
     return aggregate_query(path, f"""
         WITH source AS (SELECT {group_by}, outcome, target_eligible, wait_days FROM read_parquet(?) WHERE {where})
         SELECT COALESCE({group_by}, 'Unknown') AS organization_or_region,
@@ -136,11 +144,11 @@ def _comparison_query(path, where, params, group_by, minimum):
           count(*) FILTER(WHERE outcome='unresolved') AS unresolved,
           count(*) FILTER(WHERE outcome IN ('invalid_outcome','conflicting')) AS excluded_outcomes,
           count(*) FILTER(WHERE target_eligible) AS eligible_waits,
-          CASE WHEN count(*) FILTER(WHERE target_eligible) >= {int(minimum)}
+          CASE WHEN count(*) FILTER(WHERE target_eligible) >= {metric_minimum}
             THEN median(wait_days) FILTER(WHERE target_eligible) END AS median_wait_days,
-          CASE WHEN count(*) FILTER(WHERE target_eligible) >= {int(minimum)}
+          CASE WHEN count(*) FILTER(WHERE target_eligible) >= {metric_minimum}
             THEN quantile_cont(wait_days, .9) FILTER(WHERE target_eligible) END AS p90_wait_days,
-          CASE WHEN count(*) FILTER(WHERE outcome IN ('hospitalized','refused')) >= {int(minimum)}
+          CASE WHEN count(*) FILTER(WHERE outcome IN ('hospitalized','refused')) >= {metric_minimum}
             THEN 100.0 * count(*) FILTER(WHERE outcome='refused') /
               count(*) FILTER(WHERE outcome IN ('hospitalized','refused')) END AS refusal_share_pct
         FROM source GROUP BY 1 HAVING count(*) >= {int(minimum)} ORDER BY referrals DESC, organization_or_region

@@ -12,12 +12,19 @@ from src import config
 from src.data_loader import source_fingerprint
 from src.feature_engineering import make_features
 from src.utils import read_json
+from src.waiting_estimator import VERSION, calibrated_predictions
 
 
 def load_metadata() -> dict:
     if not config.METADATA_PATH.exists():
         raise FileNotFoundError("Model metadata is missing. Run python -m src.train_waiting_model.")
-    return read_json(config.METADATA_PATH)
+    stat = config.METADATA_PATH.stat()
+    return _load_metadata_version(str(config.METADATA_PATH), stat.st_mtime_ns, stat.st_size)
+
+
+@lru_cache(maxsize=2)
+def _load_metadata_version(path: str, modified_ns: int, file_size: int):
+    return read_json(path)
 
 
 def model_status() -> dict:
@@ -26,6 +33,9 @@ def model_status() -> dict:
     if not config.QUALITY_PATH.exists():
         return {"available": False, "stale": True, "reason": "Data-quality report is missing; rebuild data and train the model."}
     metadata = load_metadata()
+    if (metadata.get("model_version") != config.WAITING_MODEL_VERSION
+            or metadata.get("calibration", {}).get("version") != VERSION):
+        return {"available": False, "stale": True, "reason": "Waiting model protocol changed. Retrain the model."}
     report = read_json(config.QUALITY_PATH)
     if not report.get("pipeline_complete"):
         return {"available": False, "stale": True, "reason": "Data processing is incomplete. Finish preprocessing and retrain the model."}
@@ -51,17 +61,14 @@ def load_model() -> CatBoostRegressor:
 
 
 def predict_waiting_time(record: dict) -> float:
-    """Return typical wait in days for one referral, with no generated fallback."""
+    """Return a training-history estimate, never an invented positive floor."""
     features = make_features(record)
-    value = float(load_model().predict(features)[0])
-    if not np.isfinite(value):
-        raise ValueError("The model returned a non-finite estimate.")
-    return max(0.0, value)
+    predictions, _, _ = calibrated_predictions(features, load_model().predict(features), load_metadata().get("calibration"))
+    return float(predictions[0])
 
 
 def predict_batch(records: pd.DataFrame) -> np.ndarray:
     """Reusable inference boundary for a future API (not a patient-level UI)."""
-    predictions = np.asarray(load_model().predict(make_features(records)), dtype=float)
-    if not np.isfinite(predictions).all():
-        raise ValueError("The model returned non-finite estimates.")
-    return np.maximum(0.0, predictions)
+    features = make_features(records)
+    predictions, _, _ = calibrated_predictions(features, load_model().predict(features), load_metadata().get("calibration"))
+    return predictions
