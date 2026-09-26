@@ -175,7 +175,10 @@ function OverviewPage({ mode, hospital, filters, openHospital, go }: { mode: Mod
       <div className="main-grid">
         <section className="panel trend-panel"><div className="panel-heading"><div><span className="section-kicker">ДИНАМИКА</span><h2>Поступление направлений</h2><p>По неделям регистрации в выбранной выборке</p></div><span className="legend"><i /> Направления</span></div><TrendChart rows={data.trend.map(row => ({ date: row.week, value: row.referrals }))} /></section>
         <section className="panel attention-panel"><div className="panel-heading"><div><span className="section-kicker">ИЗМЕНЕНИЯ</span><h2>Что посмотреть</h2><p>Последние два полных периода по 7 дней</p></div></div>
-          {data.attention.length ? <div className="attention-list">{data.attention.map(item => <button key={item.hospital} onClick={() => openHospital(item.hospital)} className="attention-item"><span className="attention-arrow"><ArrowUpRight size={17} /></span><span className="attention-text"><strong>{item.hospital}</strong><small>{number(item.previous)} → {number(item.current)} направлений</small></span><b>+{decimal(item.change_pct, 0)}%</b></button>)}</div> : <div className="quiet-state">За этот период нет роста с достаточным числом наблюдений.</div>}
+          {data.attention.length ? <div className="attention-list">{data.attention.map(item => <button key={item.hospital} onClick={() => openHospital(item.hospital)} className="attention-item" title={item.hospital}>
+            <span className="attention-arrow"><ArrowUpRight size={17} /></span>
+            <span className="attention-text"><strong>{item.hospital}</strong><span className="attention-meta"><small>{number(item.previous)} → {number(item.current)} направлений</small><b>+{decimal(item.change_pct, 0)}%</b></span></span>
+          </button>)}</div> : <div className="quiet-state">За этот период нет роста с достаточным числом наблюдений.</div>}
           <div className="panel-footnote">Рост записанного потока — повод проверить данные и ситуацию, а не оценка занятости коек.</div>
         </section>
       </div>
