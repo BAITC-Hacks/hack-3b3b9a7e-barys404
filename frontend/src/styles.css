@@ -224,6 +224,13 @@ h1,h2,h3{letter-spacing:-.035em}
 
 small{font-size:var(--font-small)}
 @media(max-width:520px){
+  .welcome-page .public-header{flex-wrap:nowrap;justify-content:space-between;gap:12px;padding:20px 24px}
+  .welcome-page .public-header .public-brand{font-size:21px;gap:9px;min-width:0}
+  .welcome-page .public-header .brand-mark{width:36px;height:36px;border-radius:11px}
+  .welcome-page .public-header .secondary-button{flex-shrink:0;min-height:44px;padding:10px 12px;font-size:var(--font-small);border-radius:10px;gap:7px}
+  .welcome-page .public-header .public-brand small,.welcome-login-detail{display:none}
+}
+@media(max-width:520px){
   .hospital-table-head{display:none}
   .hospital-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 16px;gap:12px;padding:18px}
   .hospital-row .name-cell{grid-column:1/-1;font-size:var(--font-body)}
