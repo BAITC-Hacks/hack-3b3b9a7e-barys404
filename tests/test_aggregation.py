@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.aggregation import aggregate_hospital_days, build_aggregations
-from src.anomaly_detection import add_historical_signals
+from backend.analytics.aggregation import aggregate_hospital_days, build_aggregations
+from backend.analytics.anomaly_detection import add_historical_signals
 
 
 def _write_referrals(path, records):

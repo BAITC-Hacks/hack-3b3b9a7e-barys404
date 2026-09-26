@@ -1,10 +1,4 @@
-duckdb>=1.4,<2
-pandas>=2.2,<3
-pyarrow>=20,<24
-catboost>=1.2.8,<2
-scikit-learn>=1.6,<2
-streamlit>=1.63,<2
-plotly>=6,<7
+# Full development/demo environment. Production web runtime: requirements-api.txt.
+-r requirements-api.txt
+-r backend/legacy/requirements.txt
 pytest>=8,<10
-reportlab>=5,<6
-pypdf>=6,<7

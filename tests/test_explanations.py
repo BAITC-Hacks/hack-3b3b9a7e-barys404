@@ -2,7 +2,7 @@ from catboost import CatBoostRegressor
 import pandas as pd
 import pytest
 
-from src.explanations import explain_model
+from ml.explanations import explain_model
 
 
 def test_native_shap_reconciles_to_saved_model_output(tmp_path):

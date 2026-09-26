@@ -5,9 +5,9 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.dashboard_data import historical_charts, overview, compare_groups, comparison_trends
-from src.navigation import HOSPITAL_TYPE_NAMES, PAGE_NAMES, ROLE_NAMES, sections_for_role
-from src.ui import save_uploaded_csvs
+from backend.analytics.dashboard_data import historical_charts, overview, compare_groups, comparison_trends
+from backend.legacy.navigation import HOSPITAL_TYPE_NAMES, PAGE_NAMES, ROLE_NAMES, sections_for_role
+from backend.legacy.ui import save_uploaded_csvs
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def test_events_use_actual_outcome_dates_and_outputs_have_no_identifiers(dashboa
 
 def test_streamlit_empty_state_never_fabricates_metrics(tmp_path, monkeypatch):
     from streamlit.testing.v1 import AppTest
-    import src.ui as ui
+    import backend.legacy.ui as ui
 
     monkeypatch.setattr(ui, "ANALYTICAL_PATH", tmp_path / "absent.parquet")
     monkeypatch.setattr(ui, "QUALITY_PATH", tmp_path / "absent.json")

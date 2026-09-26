@@ -5,9 +5,9 @@ from datetime import datetime
 import duckdb
 import pytest
 
-from src import preprocessing
-from src.data_loader import coverage, load_raw_table
-from src.data_quality import inspect_table
+from backend.data_pipeline import preprocessing
+from backend.data_pipeline.data_loader import coverage, load_raw_table
+from backend.data_pipeline.data_quality import inspect_table
 
 
 WAITING = {

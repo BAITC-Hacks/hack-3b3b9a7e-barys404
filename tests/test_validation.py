@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.validation import waiting_fold, error_groups, pooled_metrics
+from ml.validation import waiting_fold, error_groups, pooled_metrics
 
 
 def test_fold_purges_unavailable_outcomes_and_excludes_other_test_windows():

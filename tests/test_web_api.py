@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 from fastapi import HTTPException
 
-from api import main as api
-from src.dashboard_data import hospital_directory
+from backend.api import main as api
+from backend.analytics.dashboard_data import hospital_directory
 
 
 def test_directory_lists_small_hospitals_but_suppresses_unstable_rates(tmp_path):

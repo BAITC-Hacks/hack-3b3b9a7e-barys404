@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import src.load_forecast as forecast
-from src.utils import write_json
+import ml.load_forecast as forecast
+from backend.core.utils import write_json
 
 
 def hospital_days(days=52):

@@ -46,8 +46,8 @@
 ## Воспроизведение
 
 ```powershell
-.\.venv\Scripts\python.exe -m src.bootstrap --validate
-.\.venv\Scripts\python.exe -m src.demo_check --ui
+.\.venv\Scripts\python.exe -m scripts.bootstrap --validate
+.\.venv\Scripts\python.exe -m scripts.demo_check --ui
 ```
 
-Полный локальный отчёт: models/temporal_validation.json. Для принудительного повторного расчёта: `python -m src.validation --force`. Этот документ содержит агрегированный снимок результатов; локальные JSON-артефакты, исходные записи и модели не публикуются.
+Полный локальный отчёт: models/temporal_validation.json. Для принудительного повторного расчёта: `python -m ml.validation --force`. Этот документ содержит агрегированный снимок результатов; локальные JSON-артефакты, исходные записи и модели не публикуются.

@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.feature_engineering import CATEGORICAL_FEATURES, FEATURE_COLUMNS, make_features
-from src.train_waiting_model import aggregate_predictions, chronological_split, regression_metrics
-from src.waiting_estimator import calibrated_predictions, fit_calibration
+from ml.feature_engineering import CATEGORICAL_FEATURES, FEATURE_COLUMNS, make_features
+from ml.train_waiting_model import aggregate_predictions, chronological_split, regression_metrics
+from ml.waiting_estimator import calibrated_predictions, fit_calibration
 
 
 def test_feature_allowlist_excludes_identifiers_and_all_outcomes():
@@ -83,8 +83,9 @@ def test_aggregate_artifact_suppresses_small_groups_and_has_no_patient_rows():
 
 def test_persisted_model_inference_matches_evaluation_and_refuses_stale_data(tmp_path, monkeypatch):
     from catboost import CatBoostRegressor
-    from src import config, predict
-    from src.utils import write_json
+    from backend.core import config
+    from ml import predict
+    from backend.core.utils import write_json
 
     # This local toy model validates serialization, not predictive performance.
     frame = pd.DataFrame({"registration_dt": pd.date_range("2025-01-01", periods=12), "hospital_mo": ["test-hospital"] * 12})
@@ -147,7 +148,7 @@ def test_real_same_day_median_is_not_replaced_with_arbitrary_floor():
 
 
 def test_cohort_explanation_does_not_invent_shap_contributions(monkeypatch):
-    from src import explanations
+    from ml import explanations
     train = make_features(pd.DataFrame({"hospital_mo": ["H"] * 10, "bed_profile": ["P"] * 10, "registration_dt": "2025-01-01"}))
     monkeypatch.setattr(explanations, "load_metadata", lambda: {"calibration": fit_calibration(train, [5.] * 10), "split": {"test_start": "2025-03-14"}})
     class NegativeModel:

@@ -1,4 +1,8 @@
-# Local data
+# Данные — исходные файлы и результаты подготовки
+
+`raw/` содержит исходные CSV, `processed/` — очищенные Parquet, SQL-агрегаты и отчёты качества. Python-код подготовки находится в `backend/data_pipeline/`, код моделей — в `ml/`, обученные артефакты — в `models/`.
+
+Из корня: `python -m scripts.bootstrap`. Эта команда обновляет только устаревшие данные и модели. Обычный запуск API не обрабатывает исходные CSV.
 
 Place source CSV files in this directory or in `raw/`. They are intentionally excluded from Git because they are large project data and may contain sensitive fields.
 

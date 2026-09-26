@@ -1,0 +1,5 @@
+duckdb>=1.4,<2
+pandas>=2.2,<3
+pyarrow>=20,<24
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
