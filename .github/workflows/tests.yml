@@ -5,6 +5,20 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: medflow
+          POSTGRES_PASSWORD: ci-test-only-password
+          POSTGRES_DB: medflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U medflow -d medflow_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      MEDFLOW_DATABASE_URL: postgresql://medflow:ci-test-only-password@127.0.0.1:5432/medflow_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

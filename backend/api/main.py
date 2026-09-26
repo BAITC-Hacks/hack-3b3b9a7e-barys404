@@ -6,15 +6,20 @@ from functools import lru_cache
 import math
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Depends, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import numpy as np
 import pandas as pd
+import psycopg
 
 from backend.analytics import dashboard_data as db
+from backend.api.auth import router as auth_router, require, resolve_hospital, check_csrf, PRODUCTION
+from backend.auth import store
+from backend.auth.store import Principal
+from backend.auth.scope import DataScope
+from starlette.concurrency import run_in_threadpool
 from backend.core.config import ANALYTICAL_PATH, METADATA_PATH, PROCESSED_DIR, QUALITY_PATH, ROOT
 from backend.data_pipeline.data_loader import source_fingerprint
 from ml.explanations import explain_waiting
@@ -29,14 +34,30 @@ from ml.waiting_estimator import calibrated_predictions
 from backend.core.utils import read_json
 
 
-app = FastAPI(title="MedFlow AI API", version="1.0.0")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
-)
+app = FastAPI(title="MedFlow AI API", version="2.0.0",
+              docs_url=None if PRODUCTION else "/docs",
+              redoc_url=None if PRODUCTION else "/redoc",
+              openapi_url=None if PRODUCTION else "/openapi.json")
+app.include_router(auth_router)
+
+
+@app.middleware("http")
+async def api_security(request: Request, call_next):
+    try:
+        if request.url.path.startswith("/api/"):
+            if request.method not in {"GET", "HEAD", "OPTIONS"}:
+                await run_in_threadpool(check_csrf, request)
+        response = await call_next(request)
+    except HTTPException as error:
+        response = JSONResponse({"detail": error.detail}, status_code=error.status_code)
+    except (psycopg.Error, RuntimeError):
+        response = JSONResponse({"detail": "Сервис временно недоступен. Повторите попытку позже."}, status_code=503)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 
 def clean(value):
@@ -91,50 +112,48 @@ def check_hospital(hospital: str):
         [hospital],
     )
     if not result.iloc[0]["n"]:
-        raise HTTPException(404, "Стационар не найден в подготовленных данных.")
+        raise HTTPException(404, "Стационар недоступен.")
 
 
 @lru_cache(maxsize=4)
-def cached_dimensions(version):
-    return db.dimensions()
+def cached_dimensions(version, hospital=None):
+    return db.dimensions(filters=DataScope(hospital).apply({}))
 
 
 @app.get("/api/health")
 def health():
-    report = ready()
-    return clean({"ready": True, "period": report.get("summary", {}),
-                  "waiting_model": model_status(),
-                  "flow_model": forecast_status(report)})
+    return {"status": "ok"}
 
 
 @app.get("/api/bootstrap")
-def bootstrap():
-    report = ready()
-    dimensions = cached_dimensions(db.file_version(ANALYTICAL_PATH))
-    summary = report.get("summary", {})
-    featured_rows = db.aggregate_query(ANALYTICAL_PATH, """
-        SELECT hospital_mo FROM read_parquet(?) WHERE hospital_mo IS NOT NULL
-        GROUP BY 1 ORDER BY count(*) DESC, hospital_mo LIMIT 1
-    """)
-    featured = str(featured_rows.iloc[0]["hospital_mo"]) if not featured_rows.empty else ""
+def bootstrap(user: Principal = Depends(require("overview:read"))):
+    hospital = resolve_hospital(user, None)
+    ready()
+    if hospital:
+        check_hospital(hospital)
+    dimensions = cached_dimensions(db.file_version(ANALYTICAL_PATH), hospital)
+    catalog = store.organizations(user.hospital_id if user.role == "hospital_analyst" else None)
+    hospital_ids = {row["name"]: row["id"] for row in catalog if row["name"] in dimensions["hospital_mo"]}
+    featured = hospital or next(iter(hospital_ids), "")
     return clean({
         "period": {"start": str(dimensions["dates"]["first"])[:10],
                    "end": str(dimensions["dates"]["last"])[:10]},
         "regions": dimensions["region_origin_code"],
         "profiles": [value for value in dimensions["bed_profile"] if value != "__MISSING__"],
-        "hospitals": dimensions["hospital_mo"],
+        "hospitals": list(hospital_ids),
+        "hospital_ids": hospital_ids,
         "featured_hospital": featured,
-        "summary": {key: summary.get(key) for key in (
-            "referral_records", "hospitals", "regions", "target_eligible")},
     })
 
 
 @app.get("/api/overview")
 def overview(start: date | None = None, end: date | None = None,
              region: str | None = None, profile: str | None = None,
-             hospital: str | None = None):
+             hospital_id: str | None = None,
+             user: Principal = Depends(require("overview:read"))):
+    hospital = resolve_hospital(user, hospital_id)
     ready()
-    filters = filters_from(start, end, region, profile, hospital)
+    filters = DataScope(hospital).apply(filters_from(start, end, region, profile))
     stats = db.overview(filters)
     where, params = db.cohort_where(filters)
     trend = db.aggregate_query(ANALYTICAL_PATH, f"""
@@ -144,11 +163,12 @@ def overview(start: date | None = None, end: date | None = None,
         GROUP BY 1 ORDER BY 1
     """, params)
     period, changes = db.recent_activity(filters)
-    if hospital:
+    if hospital and not changes.empty:
         changes = changes.loc[changes.hospital.eq(hospital)]
-    changes = changes.loc[
-        (changes.previous >= 10) & (changes.current >= 10) & (changes.change_pct > 0)
-    ].sort_values("change_pct", ascending=False).head(4)
+    if not changes.empty:
+        changes = changes.loc[
+            (changes.previous >= 10) & (changes.current >= 10) & (changes.change_pct > 0)
+        ].sort_values("change_pct", ascending=False).head(4)
     return clean({"stats": stats, "trend": trend, "attention_period": period,
                   "attention": changes})
 
@@ -157,7 +177,8 @@ def overview(start: date | None = None, end: date | None = None,
 def hospitals(start: date | None = None, end: date | None = None,
               region: str | None = None, profile: str | None = None,
               search: str = "", limit: int = Query(50, ge=1, le=100),
-              offset: int = Query(0, ge=0)):
+              offset: int = Query(0, ge=0),
+              user: Principal = Depends(require("hospital:list"))):
     ready()
     filters = filters_from(start, end, region, profile)
     table = db.hospital_directory(filters)
@@ -167,8 +188,10 @@ def hospitals(start: date | None = None, end: date | None = None,
 
 
 @app.get("/api/hospital/overview")
-def hospital_overview(hospital: str, start: date | None = None, end: date | None = None,
-                      region: str | None = None, profile: str | None = None):
+def hospital_overview(hospital_id: str, start: date | None = None, end: date | None = None,
+                      region: str | None = None, profile: str | None = None,
+                      user: Principal = Depends(require("hospital:read"))):
+    hospital = resolve_hospital(user, hospital_id, required=True)
     ready()
     check_hospital(hospital)
     filters = filters_from(start, end, region, profile, hospital)
@@ -179,7 +202,8 @@ def hospital_overview(hospital: str, start: date | None = None, end: date | None
 
 
 @app.get("/api/hospital/forecast")
-def hospital_forecast(hospital: str):
+def hospital_forecast(hospital_id: str, user: Principal = Depends(require("forecast:read"))):
+    hospital = resolve_hospital(user, hospital_id, required=True)
     report = ready()
     check_hospital(hospital)
     status = forecast_status(report)
@@ -204,7 +228,8 @@ def compare(start: date | None = None, end: date | None = None,
             region: str | None = None, profile: str | None = None,
             group: Literal["hospital_mo", "region_origin_code"] = "hospital_mo",
             minimum: int = Query(30, ge=10, le=1000),
-            selected: str = "", search: str = ""):
+            selected: str = "", search: str = "",
+            user: Principal = Depends(require("comparison:read"))):
     ready()
     filters = filters_from(start, end, region, profile)
     table = db.compare_groups(filters, group_by=group, minimum=minimum)
@@ -220,7 +245,7 @@ def compare(start: date | None = None, end: date | None = None,
 
 
 @app.get("/api/models")
-def models():
+def models(user: Principal = Depends(require("system:read"))):
     report = ready()
     waiting = model_status()
     flow = forecast_status(report)
@@ -241,17 +266,25 @@ def models():
     })
 
 
+@app.get("/api/methodology")
+def methodology(user: Principal = Depends(require("methodology:read"))):
+    # Only common, intentionally shared model quality; no cohort sizes or source inventory.
+    wait_meta = read_json(METADATA_PATH) if METADATA_PATH.exists() else {}
+    flow_meta = read_json(FORECAST_METADATA_PATH) if FORECAST_METADATA_PATH.exists() else {}
+    return clean({"waiting_mae": wait_meta.get("metrics", {}).get("mae"),
+                  "flow_mae": flow_meta.get("metrics", {}).get("mae")})
+
+
 @app.get("/api/wait-options")
-def wait_options(hospital: str | None = None, profile: str | None = None):
+def wait_options(hospital_id: str | None = None, profile: str | None = None,
+                 user: Principal = Depends(require("waiting:predict"))):
+    hospital = resolve_hospital(user, hospital_id, required=True)
     ready()
     if not model_status()["available"]:
         raise HTTPException(409, "Модель ожидания недоступна.")
     metadata = load_metadata()
     options = metadata.get("feature_options", {})
-    if hospital:
-        check_hospital(hospital)
-    else:
-        hospital = next(iter(options.get("hospital_mo", [])), None)
+    check_hospital(hospital)
     scoped_options = {}
     for key in ("icd10_ref_diag_code", "bed_profile", "territorial_type",
                 "referral_purpose", "finance_source"):
@@ -263,7 +296,7 @@ def wait_options(hospital: str | None = None, profile: str | None = None):
         """, [hospital, *([profile] if where_profile else [])])["value"].astype(str).tolist()
         scoped_options[key] = [value for value in values if value in options.get(key, []) and value != "__MISSING__"]
         if not scoped_options[key]:
-            scoped_options[key] = [value for value in options.get(key, []) if value != "__MISSING__"]
+            raise HTTPException(422, "Для выбранной больницы и профиля недостаточно данных для оценки.")
     if profile and profile not in scoped_options["bed_profile"]:
         raise HTTPException(422, "Для этого профиля нет завершённых случаев в выбранном стационаре.")
     example = {}
@@ -275,14 +308,15 @@ def wait_options(hospital: str | None = None, profile: str | None = None):
     _, methods, support = calibrated_predictions(make_features(probe), [1.], metadata["calibration"])
     return clean({"options": scoped_options,
                   "example": example,
-                  "method": methods[0], "support": support[0],
+                  "method": methods[0], "support": support[0] if methods[0] in {"hospital_median", "hospital_profile_median"} else 0,
                   "min_date": metadata["test_period"]["start"][:10],
                   "default_date": metadata.get("test_period", {}).get("end", "")[:10],
                   "mae": metadata.get("metrics", {}).get("mae")})
 
 
 class WaitingRequest(BaseModel):
-    hospital_mo: str = Field(min_length=1)
+    model_config = ConfigDict(extra="forbid")
+    hospital_id: str = Field(min_length=1, max_length=80)
     icd10_ref_diag_code: str = Field(min_length=1)
     bed_profile: str = Field(min_length=1)
     territorial_type: str = Field(min_length=1)
@@ -292,11 +326,14 @@ class WaitingRequest(BaseModel):
 
 
 @app.post("/api/predictions/wait")
-def predict_wait(payload: WaitingRequest):
+def predict_wait(payload: WaitingRequest, user: Principal = Depends(require("waiting:predict"))):
+    hospital = resolve_hospital(user, payload.hospital_id, required=True)
     ready()
     if not model_status()["available"]:
         raise HTTPException(409, "Модель ожидания недоступна.")
     record = payload.model_dump(mode="json")
+    record.pop("hospital_id")
+    record["hospital_mo"] = hospital
     metadata = load_metadata()
     options = metadata.get("feature_options", {})
     check_hospital(record["hospital_mo"])
@@ -308,7 +345,10 @@ def predict_wait(payload: WaitingRequest):
         raise HTTPException(422, "Дата должна находиться в периоде исторической проверки модели.")
     result = explain_waiting(record)
     method = result.get("method", "catboost")
-    reference = {"eligible": result.get("support", 0),
+    # Shared fallback models may train across organizations; their cohort sizes
+    # are not statistics of the caller's hospital and must not escape its scope.
+    scoped_support = result.get("support", 0) if method in {"hospital_median", "hospital_profile_median"} else 0
+    reference = {"eligible": scoped_support,
                  "median_wait_days": result["prediction"] if method != "catboost" else None}
     group_quality = next((row for row in metadata.get("group_metrics", [])
                           if row["hospital_mo"] == record["hospital_mo"]
@@ -317,7 +357,7 @@ def predict_wait(payload: WaitingRequest):
                   "raw_prediction": result["raw_prediction"],
                   "clipped": result["raw_prediction"] < 0,
                   "reference": reference,
-                  "method": method, "support": result.get("support", 0),
+                  "method": method, "support": scoped_support,
                   "training_cutoff": result.get("training_cutoff", ""),
                   "group_quality": group_quality,
                   "contributions": result["contributions"][:8],

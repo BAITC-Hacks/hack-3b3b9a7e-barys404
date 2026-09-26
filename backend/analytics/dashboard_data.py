@@ -24,15 +24,16 @@ def aggregate_query(path, sql, parameters=()):
         return con.execute(sql, [str(path), *parameters]).df()
 
 
-def dimensions(path=ANALYTICAL_PATH):
+def dimensions(path=ANALYTICAL_PATH, filters=None):
     result = {}
+    where, params = cohort_where(filters or {})
     for column in sorted(DIMENSIONS):
         result[column] = aggregate_query(
             path,
             f"SELECT DISTINCT {column} AS value FROM read_parquet(?) "
-            f"WHERE {column} IS NOT NULL ORDER BY value",
+            f"WHERE ({where}) AND {column} IS NOT NULL ORDER BY value", params,
         )["value"].astype(str).tolist()
-    dates = aggregate_query(path, "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)")
+    dates = aggregate_query(path, f"SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?) WHERE {where}", params)
     result["dates"] = dates.iloc[0].to_dict()
     return result
 
@@ -204,7 +205,8 @@ def weekly_activity(filters, selected=None, limit=15, minimum=10, path=ANALYTICA
 
 def recent_activity(filters, path=ANALYTICAL_PATH):
     """Compare two full consecutive 7-day windows within the selected source interval."""
-    bounds = aggregate_query(path, "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)").iloc[0]
+    scope_where, scope_params = cohort_where({key: value for key, value in filters.items() if key not in {"start", "end"}})
+    bounds = aggregate_query(path, f"SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?) WHERE {scope_where}", scope_params).iloc[0]
     if pd.isna(bounds["first"]) or pd.isna(bounds["last"]):
         return {}, pd.DataFrame()
     first = max(pd.Timestamp(bounds["first"]).normalize(), pd.Timestamp(filters.get("start") or bounds["first"]).normalize())

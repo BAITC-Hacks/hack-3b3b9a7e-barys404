@@ -36,10 +36,15 @@ python -m venv .venv
 .venv/bin/python -m pip install -r requirements-api.txt
 npm --prefix frontend ci
 npm --prefix frontend run build
+# Настройте PostgreSQL и MEDFLOW_DATABASE_URL в .env (docs/AUTH_SETUP.md).
+.venv/bin/python -m scripts.auth migrate
+.venv/bin/python -m scripts.auth seed-demo
 .venv/bin/python -m scripts.serve
 ```
 
-Откройте http://127.0.0.1:8000. API: http://127.0.0.1:8000/docs.
+Откройте http://127.0.0.1:8000: посетители видят публичную страницу, сотрудники входят в кабинет. Госорган видит все больницы, сотрудник — только закреплённую. Тестовые реквизиты находятся в `.runtime/demo-accounts.md` вне Git. API-документация `/docs` доступна только локально.
+
+Пользователи и сессии хранятся в PostgreSQL; аналитика — в Parquet/DuckDB. [Настройка базы и аккаунтов](docs/AUTH_SETUP.md).
 На Windows используйте `.venv\Scripts\python.exe` вместо `.venv/bin/python`.
 
 Если данных и моделей ещё нет, получите разрешённую выгрузку, положите CSV в `data/raw/` и один раз выполните:
@@ -72,7 +77,7 @@ npm --prefix frontend run build
 
 `requirements-lock.txt` — полный фиксированный Python-набор для CI/демо. `requirements-api.txt` собирает зависимости только бэкенда и ML; Streamlit для веб-версии не требуется.
 
-Прежний интерфейс сохранён: `streamlit run app.py` (порт 8501). Корневые `app.py` и `run.ps1` — небольшие совместимые точки входа, не второй набор бизнес-логики.
+Прежний интерфейс сохранён только для локального оператора, не использует RBAC и не должен публиковаться рядом с защищённой платформой: `streamlit run app.py` (порт 8501). Корневые `app.py` и `run.ps1` — небольшие совместимые точки входа, не второй набор бизнес-логики.
 
 ## Данные и прогнозы
 

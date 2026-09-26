@@ -1,3 +1,4 @@
+import { AuthGate, UserMenu } from './Auth'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, Building2, CalendarDays,
@@ -6,7 +7,7 @@ import {
 } from 'lucide-react'
 import {
   get, post, query, type Bootstrap, type Filters, type Forecast,
-  type HospitalDetail, type MetricRow, type ModelInfo, type Overview,
+  type HospitalDetail, type MetricRow, type Overview, type User, hospitalId, hospitalName,
   type WaitOptions, type WaitResult,
 } from './api'
 
@@ -19,7 +20,7 @@ const NAV: NavItem[] = [
   { id: 'hospitals', label: 'Стационары', icon: Building2 },
   { id: 'compare', label: 'Сравнение', icon: GitCompareArrows },
   { id: 'forecasts', label: 'Прогнозы', icon: Sparkles },
-  { id: 'data', label: 'Данные и модели', icon: Database },
+  { id: 'data', label: 'Как читать показатели', icon: Database },
 ]
 
 const number = (value: number | null | undefined) => value == null ? '—' : new Intl.NumberFormat('ru-RU').format(Math.round(value))
@@ -331,30 +332,34 @@ function WaitForecast({ hospital }: { hospital: string }) {
   </>
 }
 
-function ForecastsPage({ hospital, go }: { hospital: string; go: (view: View) => void }) {
+function ForecastsPage({ hospital, go, canChoose }: { hospital: string; go: (view: View) => void; canChoose: boolean }) {
   const [tab, setTab] = useState<'flow' | 'wait'>('flow')
-  return <><PageHeading eyebrow="ПРОГНОЗЫ" title="Что покажет модель" description={hospital ? `Стационар: ${hospital}` : 'Выберите стационар для прогноза.'} action={<button className="secondary-button" onClick={() => go('hospitals')}>Сменить стационар <ChevronDown size={16} /></button>} />
+  return <><PageHeading eyebrow="ПРОГНОЗЫ" title="Что покажет модель" description={hospital ? `Стационар: ${hospital}` : 'Выберите стационар для прогноза.'} action={canChoose ? <button className="secondary-button" onClick={() => go('hospitals')}>Сменить стационар <ChevronDown size={16} /></button> : undefined} />
     <div className="tab-bar" role="tablist"><button role="tab" aria-selected={tab === 'flow'} className={tab === 'flow' ? 'active' : ''} onClick={() => setTab('flow')}><Activity size={17} /> Поток направлений</button><button role="tab" aria-selected={tab === 'wait'} className={tab === 'wait' ? 'active' : ''} onClick={() => setTab('wait')}><Clock3 size={17} /> Время ожидания</button></div>
     {hospital ? tab === 'flow' ? <FlowForecast hospital={hospital} /> : <WaitForecast key={hospital} hospital={hospital} /> : <EmptyState title="Стационар не выбран" text="Откройте список стационаров и выберите организацию." />}
     <p className="page-note">Оба прогноза построены по историческим данным. Они не назначают лечение и не изменяют очередь.</p>
   </>
 }
 
-function DataPage({ bootstrap }: { bootstrap: Bootstrap }) {
-  const { data, loading, error } = useRemote<ModelInfo>('/models')
-  const sources = [{ key: 'waiting', label: 'Ожидающие' }, { key: 'referrals', label: 'Направления' }, { key: 'refusals', label: 'Отказы' }, { key: 'treated', label: 'Пролеченные случаи' }]
-  return <><PageHeading eyebrow="ДАННЫЕ И МОДЕЛИ" title="Состояние проекта" description="Источники, готовность моделей и измеренная ошибка прогноза." action={<StatusPill good={Boolean(data?.data.ready)}>{data?.data.ready ? 'Данные готовы' : 'Проверяем'}</StatusPill>} />
-    {loading && <Loading />}{error && <ErrorState message={error} />}{data && <><div className="data-intro"><div><span className="section-kicker">ПОКРЫТИЕ</span><h2>{day(bootstrap.period.start)} — {day(bootstrap.period.end)}</h2><p>Период регистрации в загруженной исторической выгрузке. После этой даты система не получает события автоматически.</p></div><div className="data-intro-numbers"><span><strong>{number(Number(data.data.summary.referral_records))}</strong> связанных направлений</span><span><strong>{number(Number(data.data.summary.hospitals))}</strong> стационаров</span></div></div>
-      <div className="data-grid"><section className="panel"><div className="panel-heading"><div><span className="section-kicker">ИСТОЧНИКИ</span><h2>Загруженные файлы</h2></div></div><div className="source-list">{sources.map(source => { const item = data.data.coverage[source.key]; return <div key={source.key}><span className="source-icon"><Database size={17} /></span><span><strong>{source.label}</strong><small>{item?.file_count ?? 0} файл(ов)</small></span><StatusPill good={Boolean(item?.complete)}>{item?.complete ? 'Готово' : 'Проверить'}</StatusPill></div> })}</div><p className="panel-footnote">Чтобы обновить данные, положите новые CSV в папку <code>data/raw</code> и запустите подготовку через <code>python -m scripts.bootstrap</code>.</p></section>
-        <section className="panel"><div className="panel-heading"><div><span className="section-kicker">КАЧЕСТВО</span><h2>Модели</h2></div></div><div className="model-row"><span className="model-icon"><Clock3 size={19} /></span><div><strong>Ожидание госпитализации</strong><small>Средняя ошибка {decimal(data.waiting.metrics.mae, 2)} дня · простой прогноз {decimal(data.waiting.metrics.baseline_mae, 2)}</small></div><StatusPill good={data.waiting.status.available}>{data.waiting.status.available ? 'Готова' : 'Недоступна'}</StatusPill></div><div className="model-row"><span className="model-icon"><Activity size={19} /></span><div><strong>Поток на семь дней</strong><small>Средняя ошибка {decimal(data.flow.metrics.mae, 2)} направления · простой прогноз {decimal(data.flow.metrics.baseline_mae, 2)}</small></div><StatusPill good={data.flow.status.available}>{data.flow.status.available ? 'Готова' : 'Недоступна'}</StatusPill></div><p className="panel-footnote">Ошибка измерена на более поздних исторических данных, не на текущем потоке пациентов.</p></section></div>
-      <section className="panel limitations-panel"><span className="section-kicker">КАК ЧИТАТЬ РЕЗУЛЬТАТЫ</span><div className="limitations-grid"><div><b>Ожидание</b><p>Модель обучена на завершённых госпитализациях. Незавершённые направления не имеют измеренного срока госпитализации.</p></div><div><b>Поток</b><p>Прогноз показывает число новых направлений. Он не измеряет свободные койки, персонал или сегодняшнюю очередь.</p></div><div><b>Сравнение</b><p>Показатели больниц не скорректированы на сложность случаев и мощность. Решение принимает специалист.</p></div></div></section>
-    </>}
+function DataPage() {
+  const { data, loading, error } = useRemote<{ waiting_mae: number | null; flow_mae: number | null }>('/methodology')
+  return <><PageHeading eyebrow="МЕТОДОЛОГИЯ" title="Как читать показатели" description="Что означают цифры в кабинете и какие выводы можно из них делать." />
+    <section className="panel limitations-panel"><span className="section-kicker">ТРИ ОСНОВНЫХ ПОНЯТИЯ</span><div className="limitations-grid"><div><b>Направления</b><p>Зарегистрированные направления в выбранном периоде. Динамика не показывает свободные койки или нагрузку на персонал.</p></div><div><b>Ожидание</b><p>Полный срок от регистрации до госпитализации среди завершённых случаев. Это не оставшееся время ожидания конкретного пациента.</p></div><div><b>Прогноз потока</b><p>Оценка новых направлений на семь дней после последней даты в истории. Прогноз не описывает сегодняшнюю очередь.</p></div></div></section>
+    {loading && <Loading />}{error && <ErrorState message={error} />}{data && <div className="methodology-metrics"><MetricCard label="Общая ошибка оценки ожидания" value={decimal(data.waiting_mae, 2)} suffix="дня" note="На исторической проверке; ошибка отдельных групп может отличаться" icon={Clock3} /><MetricCard label="Общая ошибка прогноза потока" value={decimal(data.flow_mae, 2)} suffix="напр." note="На организацию в день в историческом тесте" icon={Activity} /></div>}
+    <p className="page-note">Данные относятся к январю–марту 2025 года. Сравнение не учитывает сложность случаев и мощность больниц. Модель помогает анализировать историю; решения принимает специалист.</p>
   </>
 }
 
-function App() {
+function Onboarding({ user, go }: { user: User; go: (view: View) => void }) {
+  const key = `medflow-intro:${user.id}`
+  const [visible, setVisible] = useState(() => localStorage.getItem(key) !== 'dismissed')
+  if (!visible) return null
+  return <section className="onboarding"><div><span className="section-kicker">С ЧЕГО НАЧАТЬ</span><h2>{user.role === 'hospital_analyst' ? 'Ваша больница — уже в кабинете' : 'Вся система — в вашем обзоре'}</h2><p>Посмотрите динамику направлений, откройте прогноз и узнайте, как читать показатели.</p><button className="text-button" onClick={() => go('data')}>Как устроена аналитика <ArrowRight size={15} /></button></div><button className="icon-button" aria-label="Скрыть подсказку" onClick={() => { localStorage.setItem(key, 'dismissed'); setVisible(false) }}><X size={16} /></button></section>
+}
+
+function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
   const boot = useRemote<Bootstrap>('/bootstrap')
-  const [mode, setMode] = useState<Mode>(() => localStorage.getItem('medflow-mode') === 'hospital' ? 'hospital' : 'government')
+  const mode: Mode = user.role === 'hospital_analyst' ? 'hospital' : 'government'
   const [route, setRoute] = useState(currentRoute)
   const [hospital, setHospital] = useState('')
   const [filters, setFilters] = useState<Filters>({ start: '', end: '', region: '', profile: '' })
@@ -369,12 +374,12 @@ function App() {
   useEffect(() => {
     if (!boot.data) return
     setFilters(previous => previous.start ? previous : { start: boot.data!.period.start, end: boot.data!.period.end, region: '', profile: '' })
-    setHospital(previous => previous || route.hospital || boot.data!.featured_hospital)
+    setHospital(previous => previous || (mode === 'hospital' ? user.hospital_name || '' : hospitalName(route.hospital || '') || boot.data!.featured_hospital))
   }, [boot.data, route.hospital])
-  useEffect(() => { if (route.hospital) setHospital(route.hospital) }, [route.hospital])
-  const changeMode = (next: Mode) => { setMode(next); setFilters(previous => ({ ...previous, region: '', profile: '' })); localStorage.setItem('medflow-mode', next); navigate('overview') }
+  useEffect(() => { if (route.hospital && boot.data) { const name = hospitalName(route.hospital); if (name) setHospital(name) } }, [route.hospital, boot.data])
+
   const navigate = (view: View, name?: string) => {
-    const next = view === 'hospital' ? `hospital/${encodeURIComponent(name || hospital)}` : view
+    const next = view === 'hospital' ? `hospital/${hospitalId(name || hospital)}` : view
     if (window.location.hash === `#${next}`) setRoute(currentRoute())
     else window.location.hash = next
     setMenuOpen(false)
@@ -382,6 +387,7 @@ function App() {
   }
   const openHospital = (name: string) => { setHospital(name); navigate('hospital', name) }
   const openComparison = () => { setCompareFocus(hospital); navigate('compare') }
+  const allowed = !(mode === 'hospital' && ['hospitals', 'compare'].includes(route.view)) && !(route.hospital && boot.data && !hospitalName(route.hospital))
   const activeView = route.view
   const title = NAV.find(item => item.id === activeView)?.label ?? 'Стационар'
   const visibleNav: NavItem[] = mode === 'hospital' ? [NAV[0], { id: 'hospital', label: 'Моя больница', icon: Building2 }, NAV[3], NAV[4]] : NAV
@@ -393,19 +399,27 @@ function App() {
       <div className="sidebar-bottom"><div className="sidebar-live"><span /> Локальное демо</div><p>Аналитика на исторических данных. Решения остаются за специалистами.</p><div className="sidebar-version">MEDFLOW AI · 2026</div></div>
     </aside>
     {menuOpen && <button className="mobile-overlay" onClick={() => setMenuOpen(false)} aria-label="Закрыть меню" />}
-    <div className="workspace"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMenuOpen(true)} aria-label="Открыть меню"><Menu size={22} /></button><div className="breadcrumbs"><span>MedFlow AI</span><ChevronRight size={15} /><strong>{activeView === 'hospital' ? 'Карточка стационара' : title}</strong></div><div className="topbar-actions"><span className="period-chip"><CalendarDays size={15} /> {boot.data ? `${shortDay(boot.data.period.start)} — ${shortDay(boot.data.period.end)}` : 'Данные'}</span><div className="mode-switch" role="group" aria-label="Режим просмотра"><button className={mode === 'government' ? 'selected' : ''} onClick={() => changeMode('government')}>Госорган</button><button className={mode === 'hospital' ? 'selected' : ''} onClick={() => changeMode('hospital')}>Больница</button></div></div></header>
+    <div className="workspace"><header className="topbar"><button className="mobile-menu icon-button" onClick={() => setMenuOpen(true)} aria-label="Открыть меню"><Menu size={22} /></button><div className="breadcrumbs"><span>MedFlow AI</span><ChevronRight size={15} /><strong>{activeView === 'hospital' ? 'Карточка стационара' : title}</strong></div><div className="topbar-actions"><span className="period-chip"><CalendarDays size={15} /> {boot.data ? `${shortDay(boot.data.period.start)} — ${shortDay(boot.data.period.end)}` : 'Данные'}</span><UserMenu user={user} logout={logout} /></div></header>
       {boot.loading ? <Loading /> : boot.error ? <div className="boot-error"><ErrorState message={boot.error} /><p>Проверьте, что API запущен и подготовленные данные находятся в папке проекта.</p></div> : boot.data && filters.start && <main className="content">
-        {mode === 'hospital' && <div className="hospital-context"><span className="context-label">Стационар</span><HospitalChooser hospital={hospital} hospitals={boot.data.hospitals} choose={name => { setHospital(name); setFilters(previous => ({ ...previous, region: '', profile: '' })); if (activeView === 'hospital') navigate('hospital', name) }} /><button className="text-button" onClick={() => openHospital(hospital)}>Открыть <ArrowRight size={16} /></button></div>}
+        {mode === 'hospital' && <div className="hospital-context"><Building2 size={18} /><div className="assigned-hospital"><span className="context-label">ВАША ОРГАНИЗАЦИЯ</span><strong>{user.hospital_name}</strong></div></div>}
+        {mode === 'government' && activeView === 'forecasts' && <div className="hospital-context"><span className="context-label">Стационар</span><HospitalChooser hospital={hospital} hospitals={boot.data.hospitals} choose={setHospital} /></div>}
+        {!allowed ? <EmptyState title="Нет доступа к этой странице" text="Выберите доступный раздел в меню. Данные других организаций закрыты." /> : <>
+        {activeView === 'overview' && <Onboarding user={user} go={navigate} />}
         {['overview', 'hospitals', 'hospital', 'compare'].includes(activeView) && <FilterBar filters={filters} setFilters={setFilters} bootstrap={boot.data} />}
         {activeView === 'overview' && <OverviewPage mode={mode} hospital={hospital} filters={filters} openHospital={openHospital} go={navigate} />}
         {activeView === 'hospitals' && <HospitalsPage filters={filters} openHospital={openHospital} />}
         {activeView === 'hospital' && <HospitalPage hospital={hospital} filters={filters} mode={mode} go={navigate} compare={openComparison} />}
         {activeView === 'compare' && <ComparePage filters={filters} openHospital={openHospital} focus={compareFocus} />}
-        {activeView === 'forecasts' && <ForecastsPage hospital={hospital} go={navigate} />}
-        {activeView === 'data' && <DataPage bootstrap={boot.data} />}
+        {activeView === 'forecasts' && <ForecastsPage hospital={hospital} go={navigate} canChoose={mode === 'government'} />}
+        {activeView === 'data' && <DataPage />}
+        </>}
       </main>}
     </div>
   </div>
+}
+
+function App() {
+  return <AuthGate>{(user, logout) => user.role === 'platform_admin' ? <div className="admin-shell"><header className="topbar"><strong>MedFlow AI · Администрирование</strong><UserMenu user={user} logout={logout} /></header><main className="content"><PageHeading eyebrow="АДМИНИСТРАТОР" title="Управление доступом" description="Учётные записи управляются локальным оператором. Аналитика доступна в отдельных кабинетах сотрудников." /><section className="panel"><h2>Команды оператора</h2><p>Список пользователей: <code>python -m scripts.auth users</code></p><p>Выдача и отзыв доступа: <code>python -m scripts.auth --help</code></p></section><DataPage /></main></div> : user.role === 'hospital_analyst' && !user.hospital_name ? <div className="auth-state"><h1>Доступ ещё не настроен</h1><p>Администратор должен назначить действующую организацию.</p><UserMenu user={user} logout={logout} /></div> : <Workspace user={user} logout={logout} />}</AuthGate>
 }
 
 export default App
