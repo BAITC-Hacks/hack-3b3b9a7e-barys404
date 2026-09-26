@@ -83,8 +83,18 @@ function MetricCard({ label, value, suffix, note, tone = 'plain', icon: Icon }: 
 
 function TrendChart({ rows, forecastFrom }: { rows: { date: string; value: number }[]; forecastFrom?: number }) {
   const [active, setActive] = useState<number | null>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(760)
+  const hasRows = rows.length > 0
+  useEffect(() => {
+    if (!chartRef.current) return
+    // Match the drawing to its container so labels stay readable on narrow cards.
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(1, Math.round(entry.contentRect.width))))
+    observer.observe(chartRef.current)
+    return () => observer.disconnect()
+  }, [hasRows])
   if (!rows.length) return <EmptyState title="Нет данных для графика" text="Попробуйте изменить период или фильтры." />
-  const width = 760, height = 280, left = 46, right = 16, top = 24, bottom = 51
+  const height = 280, left = 68, right = 16, top = 24, bottom = 51
   const plotWidth = width - left - right, plotHeight = height - top - bottom
   const max = Math.max(1, ...rows.map(row => row.value))
   const topValue = Math.ceil(max / 5) * 5 || 5
@@ -96,8 +106,8 @@ function TrendChart({ rows, forecastFrom }: { rows: { date: string; value: numbe
   const area = `M ${x(0)} ${top + plotHeight} L ${points.join(' L ')} L ${x(rows.length - 1)} ${top + plotHeight} Z`
   const labels = [...new Set([0, Math.floor((rows.length - 1) / 2), rows.length - 1])]
   const current = active == null ? null : rows[active]
-  const tipX = active == null ? 0 : Math.min(width - 138, Math.max(52, x(active) - 66))
-  return <div className="chart-wrap">
+  const tipX = active == null ? 0 : Math.min(width - 186, Math.max(6, x(active) - 90))
+  return <div className="chart-wrap" ref={chartRef}>
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="График направлений по датам" onMouseLeave={() => setActive(null)}>
       <defs><linearGradient id="chartArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#24a99a" stopOpacity=".2" /><stop offset="100%" stopColor="#24a99a" stopOpacity="0" /></linearGradient></defs>
       {[0, .5, 1].map((fraction, index) => <g key={index}><line x1={left} x2={width - right} y1={y(topValue * fraction)} y2={y(topValue * fraction)} className="chart-grid" /><text x={left - 10} y={y(topValue * fraction) + 4} textAnchor="end" className="chart-label">{number(topValue * fraction)}</text></g>)}
@@ -107,7 +117,7 @@ function TrendChart({ rows, forecastFrom }: { rows: { date: string; value: numbe
       {projected.length > 1 && <polyline points={projected.join(' ')} fill="none" stroke="#39a9a0" strokeWidth="3.3" strokeDasharray="7 6" strokeLinecap="round" strokeLinejoin="round" />}
       {labels.map(index => <text key={index} x={x(index)} y={height - 14} textAnchor={index === 0 ? 'start' : index === rows.length - 1 ? 'end' : 'middle'} className="chart-label">{shortDay(rows[index].date)}</text>)}
       {rows.map((row, index) => <circle key={`${row.date}-${index}`} cx={x(index)} cy={y(row.value)} r="12" fill="transparent" onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} tabIndex={0} aria-label={`${day(row.date)}: ${decimal(row.value)} направлений`} />)}
-      {active != null && current && <g className="chart-tip"><line x1={x(active)} x2={x(active)} y1={top} y2={top + plotHeight} stroke="#71bcb4" strokeDasharray="4 5" /><circle cx={x(active)} cy={y(current.value)} r="5" fill="#147c78" stroke="white" strokeWidth="2" /><rect x={tipX} y="2" width="132" height="51" rx="10" fill="#143d43" /><text x={tipX + 11} y="22" fill="#bed8d7" fontSize="11">{day(current.date)}</text><text x={tipX + 11} y="42" fill="white" fontSize="15" fontWeight="700">{decimal(current.value)} направл.</text></g>}
+      {active != null && current && <g className="chart-tip"><line x1={x(active)} x2={x(active)} y1={top} y2={top + plotHeight} stroke="#71bcb4" strokeDasharray="4 5" /><circle cx={x(active)} cy={y(current.value)} r="5" fill="#147c78" stroke="white" strokeWidth="2" /><rect x={tipX} y="2" width="180" height="61" rx="10" fill="#143d43" /><text x={tipX + 11} y="25" fill="#bed8d7" fontSize="14">{day(current.date)}</text><text x={tipX + 11} y="49" fill="white" fontSize="16" fontWeight="700">{decimal(current.value)} направл.</text></g>}
     </svg>
   </div>
 }
@@ -150,8 +160,8 @@ function FilterBar({ filters, setFilters, bootstrap }: { filters: Filters; setFi
 function HospitalRow({ row, onOpen }: { row: MetricRow; onOpen: (hospital: string) => void }) {
   return <button className="hospital-row" onClick={() => onOpen(row.organization_or_region)}>
     <span className="hospital-cell name-cell"><span className="hospital-avatar"><Building2 size={17} /></span><span>{row.organization_or_region}</span></span>
-    <span className="hospital-cell numeric-cell">{number(row.referrals)}</span>
-    <span className="hospital-cell numeric-cell">{decimal(row.median_wait_days)} <small>дн.</small></span>
+    <span className="hospital-cell numeric-cell" data-label="Направления">{number(row.referrals)}</span>
+    <span className="hospital-cell numeric-cell" data-label="Ожидание">{decimal(row.median_wait_days)} <small>дн.</small></span>
     <span className="hospital-cell numeric-cell">{decimal(row.refusal_share_pct)}<small>%</small></span>
     <ChevronRight size={17} className="row-chevron" />
   </button>
