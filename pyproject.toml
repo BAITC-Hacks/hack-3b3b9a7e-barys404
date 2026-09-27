@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+cache_dir = ".runtime/pytest"
+norecursedirs = [".venv", "node_modules", "data", "models", ".runtime"]

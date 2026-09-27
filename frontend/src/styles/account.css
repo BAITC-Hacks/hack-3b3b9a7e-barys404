@@ -1,0 +1,94 @@
+.user-menu {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.user-menu > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.user-menu strong {
+  font-size: 0.875rem;
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu small {
+  font-size: 0.875rem;
+  color: #607970;
+}
+
+.user-menu .icon-button {
+  flex-shrink: 0;
+}
+
+.user-menu > span {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  background: #fff2ef;
+  border: 1px solid #f5d7ce;
+  border-radius: 8px;
+  color: #ad6c5b;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.assigned-hospital {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.assigned-hospital strong {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.onboarding {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(110deg, #e5f4ed, #f8fcfa);
+  border: 1px solid #d6e9df;
+  border-radius: 13px;
+  padding: 20px 23px;
+  margin-bottom: 22px;
+}
+
+.onboarding h2 {
+  font-size: 18px;
+  margin: 8px 0;
+}
+
+.onboarding p {
+  font-size: 0.875rem;
+  color: #607970;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.onboarding .icon-button {
+  flex-shrink: 0;
+}
+
+.methodology-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.admin-shell {
+  min-height: 100vh;
+}

@@ -1,0 +1,86 @@
+.filter-bar {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  padding: 15px 18px;
+  margin-bottom: 35px;
+  border-radius: 15px;
+  border: 1px solid rgba(218, 231, 227, 0.86);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 28px rgba(26, 69, 66, 0.04);
+  backdrop-filter: blur(12px);
+}
+
+.filter-intro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 9px;
+  padding-bottom: 4px;
+  color: #869c98;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.filter-intro strong {
+  color: #375b57;
+  font-size: 0.875rem;
+}
+
+.filter-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e3f2ef;
+  color: #188c80;
+}
+
+.filter-bar label {
+  display: grid;
+  gap: 6px;
+  color: #718a87;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.filter-bar input,
+.filter-bar select {
+  height: 36px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid #dde9e5;
+  background: #fbfdfc;
+  color: #24494a;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  outline: none;
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus,
+.search-field:focus-within,
+.wait-form input:focus,
+.wait-form select:focus {
+  border-color: #37a69a;
+  box-shadow: 0 0 0 3px rgba(55, 166, 154, 0.13);
+}
+
+.filter-bar input[type='date'] {
+  width: 139px;
+}
+
+.filter-select {
+  flex: 1;
+  max-width: 260px;
+}
+
+.filter-select select {
+  width: 100%;
+  text-overflow: ellipsis;
+}

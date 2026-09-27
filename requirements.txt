@@ -1,0 +1,5 @@
+# Full development/demo environment. Production web runtime: requirements-api.txt.
+-r requirements-api.txt
+-r backend/legacy/requirements.txt
+pytest>=8,<10
+httpx==0.28.1

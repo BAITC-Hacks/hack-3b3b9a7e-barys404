@@ -1,0 +1,183 @@
+.tab-bar {
+  display: inline-flex;
+  gap: 3px;
+  background: #eaf1ee;
+  padding: 4px;
+  border-radius: 11px;
+  margin: 0 0 19px;
+}
+
+.tab-bar button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #72908a;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.tab-bar button.active {
+  background: #fff;
+  color: #1d8376;
+  box-shadow: 0 3px 11px rgba(27, 94, 84, 0.09);
+}
+
+.forecast-summary {
+  border: 1px solid #d8eee7;
+  background: linear-gradient(105deg, #e4f5ed, #f7fbf9);
+  border-radius: 16px;
+  padding: 24px 29px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 17px;
+}
+
+.forecast-summary h2 {
+  font-size: 33px;
+  margin: 12px 0 5px;
+  color: #1d6661;
+}
+
+.forecast-summary h2 small {
+  font-size: 14px;
+  letter-spacing: 0;
+  color: #4e817a;
+}
+
+.forecast-summary p {
+  font-size: 0.875rem;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  border-radius: 100px;
+  padding: 6px 9px;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.status-good {
+  background: #e4f5ed;
+  color: #28866e;
+}
+
+.status-muted {
+  background: #f2f4f2;
+  color: #879b94;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.forecast-chart {
+  margin-bottom: 18px;
+}
+
+.chart-legend {
+  gap: 18px;
+}
+
+.chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend span:nth-child(2) i {
+  background: #8cd3c8;
+}
+
+.forecast-note {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 14px;
+  background: #f3f8f6;
+  border-radius: 8px;
+  color: #6e9188;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.forecast-lower {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 18px;
+}
+
+.forecast-lower .panel {
+  padding: 23px;
+}
+
+.forecast-days {
+  margin-top: 21px;
+  display: grid;
+}
+
+.forecast-days > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid #edf2ef;
+  font-size: 0.875rem;
+  color: #50746d;
+  font-weight: 700;
+}
+
+.forecast-days small {
+  font-size: 0.875rem;
+  color: #607970;
+  font-weight: 500;
+  margin-left: 7px;
+}
+
+.forecast-days strong {
+  color: #306860;
+  font-size: 0.875rem;
+}
+
+.quality-callout {
+  background: linear-gradient(140deg, #fff, #f6faf8);
+}
+
+.quality-callout h2 {
+  font-size: 29px;
+  margin: 22px 0 9px;
+}
+
+.quality-callout h2 small {
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  color: #83a098;
+}
+
+.quality-callout p {
+  font-size: 0.875rem;
+  line-height: 1.8;
+  color: #607970;
+}
+
+.quality-divider {
+  height: 1px;
+  background: #dfece6;
+  margin: 28px 0 15px;
+}
+
+.quality-callout > span:last-child {
+  color: #7c9890;
+  font-size: 0.875rem;
+}

@@ -1,0 +1,41 @@
+.hospital-main {
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.8fr);
+}
+
+.profile-list {
+  margin-top: 18px;
+}
+
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid #edf2f0;
+  padding: 12px 0;
+  color: #5b7773;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.profile-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-row strong {
+  color: #2c655e;
+}
+
+.pathway-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  background: linear-gradient(100deg, #ecf8f4, #fff);
+  padding: 27px;
+}
+
+.pathway-panel p {
+  max-width: 500px;
+}

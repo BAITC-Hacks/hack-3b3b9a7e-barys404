@@ -1,0 +1,6 @@
+catboost>=1.2.8,<2
+scikit-learn>=1.6,<2
+numpy>=1.26,<3
+pandas>=2.2,<3
+pyarrow>=20,<24
+duckdb>=1.4,<2

@@ -1,0 +1,238 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: radial-gradient(circle at 88% -16%, #e0f3ee 0, transparent 30%), #f4f7f6;
+}
+
+.sidebar {
+  position: fixed;
+  z-index: 20;
+  inset: 0 auto 0 0;
+  width: 244px;
+  padding: 30px 16px 22px;
+  background: linear-gradient(155deg, #153d42 0%, #0c3035 57%, #0b292f 100%);
+  color: #e9fbf6;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 18px 0 46px rgba(12, 51, 52, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 4px 12px 44px;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #83dcd1, #45bcb1);
+  color: #0a3438;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 9px 22px rgba(19, 185, 166, 0.22);
+}
+
+.brand strong {
+  display: block;
+  font-size: 20px;
+  line-height: 1.05;
+  letter-spacing: -0.06em;
+  color: #fff;
+}
+
+.brand strong span {
+  color: #74d8ca;
+}
+
+.brand small {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  color: #a8c8c7;
+}
+
+.sidebar-divider {
+  height: 1px;
+  flex-shrink: 0;
+  background: rgba(188, 235, 228, 0.13);
+  margin: 0 0 20px;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 6px;
+}
+
+.nav-link {
+  border: 0;
+  position: relative;
+  background: transparent;
+  color: #b4cecd;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  padding: 14px 14px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: white;
+  transform: translateX(2px);
+}
+
+.nav-active,
+.nav-active:hover {
+  background: linear-gradient(100deg, rgba(95, 205, 191, 0.2), rgba(95, 205, 191, 0.08));
+  color: #f0fffb;
+}
+
+.nav-active svg {
+  color: #75d5c8;
+}
+
+.nav-indicator {
+  position: absolute;
+  right: 0;
+  top: 15px;
+  bottom: 15px;
+  width: 3px;
+  border-radius: 3px;
+  background: #72dccc;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 18px 14px 0;
+  border-top: 1px solid rgba(188, 235, 228, 0.13);
+}
+
+.sidebar-live {
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d9f4ea;
+}
+
+.sidebar-live span,
+.heading-badge span {
+  width: 7px;
+  height: 7px;
+  background: #63d4a7;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(99, 212, 167, 0.15);
+}
+
+.sidebar-bottom p {
+  color: #90b6b6;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  margin: 11px 0 18px;
+}
+
+.sidebar-version {
+  font-size: 0.875rem;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  color: #669294;
+}
+
+.workspace {
+  margin-left: 244px;
+  min-width: 0;
+  flex: 1;
+}
+
+.topbar {
+  height: 74px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: rgba(250, 252, 251, 0.78);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  box-shadow: 0 1px 0 rgba(22, 75, 73, 0.08);
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 0.875rem;
+  color: #8aa09f;
+  white-space: nowrap;
+}
+
+.breadcrumbs strong {
+  font-size: 0.875rem;
+  color: #284c4c;
+  font-weight: 700;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.period-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #72908e;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  background: #edf3f1;
+  border: 1px solid #e0eae7;
+  border-radius: 11px;
+}
+
+.mode-switch button {
+  background: transparent;
+  border: 0;
+  padding: 8px 11px;
+  border-radius: 7px;
+  color: #6b8583;
+  font-size: 0.875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mode-switch .selected {
+  background: #fff;
+  color: #185a58;
+  box-shadow: 0 2px 8px rgba(32, 87, 82, 0.11);
+}
+
+.content {
+  max-width: 1590px;
+  margin: auto;
+  padding: 26px 36px 70px;
+}

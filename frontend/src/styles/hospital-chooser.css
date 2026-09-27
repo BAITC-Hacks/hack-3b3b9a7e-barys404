@@ -1,0 +1,120 @@
+.hospital-context {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid #dcebe5;
+  background: #eaf5f0;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.context-label {
+  color: #56877b;
+  font-size: 0.875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hospital-context .text-button {
+  margin-left: auto;
+}
+
+.hospital-chooser {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.chooser-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #315f55;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 4px;
+}
+
+.chooser-trigger span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chooser-popover {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 12px);
+  left: 0;
+  width: min(440px, 80vw);
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #dcebe5;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(17, 63, 56, 0.16);
+}
+
+.chooser-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid #dcebe5;
+  border-radius: 8px;
+  color: #83a79c;
+}
+
+.chooser-search input {
+  width: 100%;
+  height: 36px;
+  border: 0;
+  outline: 0;
+  color: #315f55;
+  font-size: 0.875rem;
+}
+
+.chooser-list {
+  max-height: 275px;
+  overflow: auto;
+  margin-top: 7px;
+}
+
+.chooser-list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px;
+  border-radius: 7px;
+  color: #50766e;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.chooser-list button:hover {
+  background: #eef8f2;
+  color: #197b6e;
+}
+
+.chooser-list button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chooser-list p {
+  padding: 12px;
+  color: #607970;
+  font-size: 0.875rem;
+}
