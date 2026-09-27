@@ -65,9 +65,6 @@ export function ForecastsPage({
         очередь.
       </p>
       <div className="workspace-actions">
-        <button className="secondary-button" onClick={() => go('validation')}>
-          Проверка по периодам <ArrowRight size={16} />
-        </button>
         <button className="secondary-button" onClick={() => go('hospital')}>
           Карточка и PDF-сводка <ArrowRight size={16} />
         </button>

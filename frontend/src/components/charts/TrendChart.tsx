@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import { day, decimal, number, shortDay } from '../../lib/format'
+import { useState, useRef, useEffect } from 'react'
 import { EmptyState } from '../ui/EmptyState'
+import { number, shortDay, day, decimal } from '../../lib/format'
 
 export function TrendChart({
   rows,
   forecastFrom,
 }: {
-  rows: {
-    date: string
-    value: number
-  }[]
+  rows: { date: string; value: number }[]
   forecastFrom?: number
 }) {
   const [active, setActive] = useState<number | null>(null)
@@ -100,7 +97,6 @@ export function TrendChart({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {rows.length === 1 && <circle cx={x(0)} cy={y(rows[0].value)} r="5" fill="#147c78" />}
         {projected.length > 1 && (
           <polyline
             points={projected.join(' ')}

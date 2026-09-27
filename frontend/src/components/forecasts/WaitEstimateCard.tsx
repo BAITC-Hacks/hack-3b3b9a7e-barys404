@@ -1,6 +1,5 @@
 import { type WaitResult } from '../../api/types'
 import { decimal, number } from '../../lib/format'
-import { EvaluationCaption } from '../evidence/EvaluationCaption'
 import { waitBasis } from './waitConfig'
 
 export function WaitEstimateCard({ result }: { result: WaitResult }) {
@@ -31,11 +30,6 @@ export function WaitEstimateCard({ result }: { result: WaitResult }) {
           </>
         )}{' '}
         Это не дата госпитализации.
-      </div>
-      <div className="result-caveat">
-        Метрики актуальны · MAE на всём тесте: {decimal(result.mae, 2)} дня. Общая медиана обучающей
-        выборки: MAE {decimal(result.baseline_mae, 2)} дня.
-        <EvaluationCaption version={result.model_version} period={result.test_period} />
       </div>
     </section>
   )

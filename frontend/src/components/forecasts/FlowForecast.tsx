@@ -1,14 +1,13 @@
-import { Info } from 'lucide-react'
-import { useMemo } from 'react'
-import { query } from '../../api/client'
-import { type Forecast } from '../../api/types'
 import { useRemote } from '../../hooks/useRemote'
-import { day, decimal, number } from '../../lib/format'
-import { TrendChart } from '../charts/TrendChart'
-import { EvaluationCaption } from '../evidence/EvaluationCaption'
-import { ErrorState } from '../ui/ErrorState'
+import { type Forecast } from '../../api/types'
+import { query } from '../../api/client'
+import { useMemo } from 'react'
 import { Loading } from '../ui/Loading'
+import { ErrorState } from '../ui/ErrorState'
+import { number, day, decimal } from '../../lib/format'
 import { StatusPill } from '../ui/StatusPill'
+import { TrendChart } from '../charts/TrendChart'
+import { Info } from 'lucide-react'
 
 export function FlowForecast({ hospital }: { hospital: string }) {
   const { data, loading, error } = useRemote<Forecast>(
@@ -32,9 +31,7 @@ export function FlowForecast({ hospital }: { hospital: string }) {
         <>
           <div className="forecast-summary">
             <div>
-              <span className="section-kicker">
-                {day(data.forecast[0]?.date)} — {day(data.forecast.at(-1)?.date)}
-              </span>
+              <span className="section-kicker">1–7 АПРЕЛЯ 2025</span>
               <h2>
                 {number(data.total)} <small>направлений за 7 дней</small>
               </h2>
@@ -82,17 +79,15 @@ export function FlowForecast({ hospital }: { hospital: string }) {
             </section>
             <section className="panel quality-callout">
               <span className="section-kicker">ТОЧНОСТЬ МОДЕЛИ</span>
-              <StatusPill good={true}>Метрики актуальны</StatusPill>
               <h2>
                 {decimal(data.metrics.mae, 2)} <small>направления</small>
               </h2>
               <p>
-                Средняя абсолютная ошибка на всём историческом тесте: на организацию в день. Ошибка
-                первого дня горизонта: {decimal(data.metrics_by_horizon[0]?.mae, 2)}.
+                Средняя абсолютная ошибка на историческом тесте для организации в день. На первом
+                дне горизонта ошибка выше: {decimal(data.metrics_by_horizon[0]?.mae, 2)}.
               </p>
               <div className="quality-divider" />
               <span>Простой прогноз: {decimal(data.metrics.baseline_mae, 2)} направления</span>
-              <EvaluationCaption version={data.model_version} period={data.test_period} />
             </section>
           </div>
         </>

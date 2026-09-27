@@ -1,24 +1,16 @@
-import {
-  Activity,
-  ArrowLeft,
-  ArrowRight,
-  Clock3,
-  Info,
-  ShieldCheck,
-  TrendingUp,
-} from 'lucide-react'
-import { query } from '../api/client'
 import { type Filters, type HospitalDetail, type Overview } from '../api/types'
 import { type Mode, type View } from '../app/navigation'
-import { BriefingPanel } from '../components/briefing/BriefingPanel'
-import { WeeklyTrend } from '../components/charts/WeeklyTrend'
-import { EmptyState } from '../components/ui/EmptyState'
-import { ErrorState } from '../components/ui/ErrorState'
-import { Loading } from '../components/ui/Loading'
-import { MetricCard } from '../components/ui/MetricCard'
-import { PageHeading } from '../components/ui/PageHeading'
 import { useRemote } from '../hooks/useRemote'
-import { decimal, number } from '../lib/format'
+import { query } from '../api/client'
+import { ArrowLeft, ArrowRight, Activity, Clock3, TrendingUp, Info } from 'lucide-react'
+import { PageHeading } from '../components/ui/PageHeading'
+import { Loading } from '../components/ui/Loading'
+import { ErrorState } from '../components/ui/ErrorState'
+import { EmptyState } from '../components/ui/EmptyState'
+import { MetricCard } from '../components/ui/MetricCard'
+import { number, decimal } from '../lib/format'
+import { TrendChart } from '../components/charts/TrendChart'
+import { BriefingPanel } from '../components/briefing/BriefingPanel'
 
 export function HospitalPage({
   hospital,
@@ -26,14 +18,12 @@ export function HospitalPage({
   mode,
   go,
   compare,
-  inspect,
 }: {
   hospital: string
   filters: Filters
   mode: Mode
   go: (view: View) => void
   compare: () => void
-  inspect: (view: 'signals' | 'quality') => void
 }) {
   const detail = useRemote<HospitalDetail>(
     hospital ? `/hospital/overview${query({ ...filters, hospital })}` : null,
@@ -114,7 +104,11 @@ export function HospitalPage({
                   <p>История выбранного стационара</p>
                 </div>
               </div>
-              {trend.data && <WeeklyTrend rows={trend.data.trend} />}
+              {trend.data && (
+                <TrendChart
+                  rows={trend.data.trend.map((row) => ({ date: row.week, value: row.referrals }))}
+                />
+              )}
             </section>
             <section className="panel">
               <div className="panel-heading">
@@ -147,25 +141,11 @@ export function HospitalPage({
               Показать прогноз <ArrowRight size={17} />
             </button>
           </section>
-          <div className="workspace-actions">
-            <button className="secondary-button" onClick={() => inspect('signals')}>
-              Сигналы этой больницы <Activity size={16} />
-            </button>
-            <button className="secondary-button" onClick={() => inspect('quality')}>
-              Качество данных <ShieldCheck size={16} />
-            </button>
-          </div>
           <p className="page-note">
-            Медиана и P90 показываются от {detail.data?.metric_minimum} допустимых завершённых
-            случаев; доля отказов — от {detail.data?.metric_minimum} известных исходов. Прочерк
-            означает недостаток данных. P90 — наблюдённый срок у 90% завершённых случаев, а не
-            доверительный интервал. Фильтры выше не меняют обученную модель прогноза.
+            P90 — наблюдённый срок у 90% завершённых случаев, а не доверительный интервал. Фильтры
+            выше не меняют обученную модель прогноза.
           </p>
-          <BriefingPanel
-            filters={filters}
-            hospitals={[hospital]}
-            minimum={detail.data?.metric_minimum ?? 10}
-          />
+          <BriefingPanel filters={filters} hospitals={[hospital]} minimum={10} />
         </>
       )}
     </>

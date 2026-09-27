@@ -1,48 +1,20 @@
-import {
-  Activity,
-  Building2,
-  ChartNoAxesCombined,
-  Database,
-  GitCompareArrows,
-  LayoutDashboard,
-  ShieldCheck,
-  Sparkles,
-} from 'lucide-react'
+import { LayoutDashboard, Building2, GitCompareArrows, Sparkles, Database } from 'lucide-react'
 
-export type View =
-  | 'overview'
-  | 'hospitals'
-  | 'hospital'
-  | 'compare'
-  | 'forecasts'
-  | 'signals'
-  | 'quality'
-  | 'validation'
-  | 'data'
+export type View = 'overview' | 'hospitals' | 'hospital' | 'compare' | 'forecasts' | 'data'
 
 export type Mode = 'government' | 'hospital'
 
-export type NavItem = {
-  id: View
-  label: string
-  icon: typeof LayoutDashboard
-}
+export type NavItem = { id: View; label: string; icon: typeof LayoutDashboard }
 
 export const NAV: NavItem[] = [
   { id: 'overview', label: 'Обзор', icon: LayoutDashboard },
   { id: 'hospitals', label: 'Стационары', icon: Building2 },
   { id: 'compare', label: 'Сравнение', icon: GitCompareArrows },
   { id: 'forecasts', label: 'Прогнозы', icon: Sparkles },
-  { id: 'signals', label: 'Сигналы и отклонения', icon: Activity },
-  { id: 'quality', label: 'Качество данных', icon: ShieldCheck },
-  { id: 'validation', label: 'Проверка моделей', icon: ChartNoAxesCombined },
   { id: 'data', label: 'Как читать показатели', icon: Database },
 ]
 
-export function currentRoute(): {
-  view: View
-  hospital?: string
-} {
+export function currentRoute(): { view: View; hospital?: string } {
   const hash = window.location.hash.slice(1)
   if (hash.startsWith('hospital/')) {
     try {

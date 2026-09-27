@@ -23,11 +23,7 @@ export function OverviewMetrics({ data }: { data: Overview }) {
         label="Медиана ожидания"
         value={decimal(data.stats.median_wait)}
         suffix="дня"
-        note={
-          data.stats.median_wait == null
-            ? `Недостаточно допустимых случаев: ${number(data.stats.eligible)} из ${data.metric_minimum}`
-            : `По ${number(data.stats.eligible)} допустимым завершённым случаям`
-        }
+        note="По завершённым госпитализациям"
         icon={Clock3}
       />
       <MetricCard

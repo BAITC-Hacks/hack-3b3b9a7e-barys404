@@ -10,7 +10,6 @@ MIN_DATE = "2000-01-01"
 MAX_DATE = "2026-09-11"
 MIN_WAIT_DAYS = 0.0
 MAX_WAIT_DAYS = 90.0
-MIN_METRIC_GROUP_SIZE = 10
 TRAIN_FRACTION = 0.8
 RANDOM_SEED = 42
 # Three referral source parts require more than 1 GB while a cleaned DuckDB

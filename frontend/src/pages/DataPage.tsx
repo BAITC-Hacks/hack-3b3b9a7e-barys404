@@ -1,12 +1,16 @@
-import { type Methodology } from '../api/types'
-import { ModelQuality } from '../components/evidence/ModelQuality'
-import { ErrorState } from '../components/ui/ErrorState'
-import { Loading } from '../components/ui/Loading'
-import { PageHeading } from '../components/ui/PageHeading'
 import { useRemote } from '../hooks/useRemote'
+import { PageHeading } from '../components/ui/PageHeading'
+import { Loading } from '../components/ui/Loading'
+import { ErrorState } from '../components/ui/ErrorState'
+import { MetricCard } from '../components/ui/MetricCard'
+import { decimal } from '../lib/format'
+import { Clock3, Activity } from 'lucide-react'
 
 export function DataPage() {
-  const { data, loading, error } = useRemote<Methodology>('/methodology')
+  const { data, loading, error } = useRemote<{
+    waiting_mae: number | null
+    flow_mae: number | null
+  }>('/methodology')
   return (
     <>
       <PageHeading
@@ -44,17 +48,19 @@ export function DataPage() {
       {error && <ErrorState message={error} />}
       {data && (
         <div className="methodology-metrics">
-          <ModelQuality
-            name="Оценка ожидания"
-            unit="дня"
-            baseline="Общая медиана обучающей выборки"
-            evidence={data.waiting}
+          <MetricCard
+            label="Общая ошибка оценки ожидания"
+            value={decimal(data.waiting_mae, 2)}
+            suffix="дня"
+            note="На исторической проверке; ошибка отдельных групп может отличаться"
+            icon={Clock3}
           />
-          <ModelQuality
-            name="Прогноз потока"
-            unit="напр. / организацию в день"
-            baseline="Среднее предыдущих 7 дней"
-            evidence={data.flow}
+          <MetricCard
+            label="Общая ошибка прогноза потока"
+            value={decimal(data.flow_mae, 2)}
+            suffix="напр."
+            note="На организацию в день в историческом тесте"
+            icon={Activity}
           />
         </div>
       )}

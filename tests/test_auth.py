@@ -76,7 +76,7 @@ def analytical(monkeypatch, tmp_path):
 def test_anonymous_cannot_read_any_business_route(accounts):
     with TestClient(api.app, base_url=BASE) as client:
         assert client.get("/api/health").json() == {"status": "ok"}
-        for route in ["bootstrap", "overview", "hospitals", "compare", "models", "methodology", "hospital/overview?hospital_id=x", "hospital/forecast?hospital_id=x", "wait-options", "signals", "quality", "validation"]:
+        for route in ["bootstrap", "overview", "hospitals", "compare", "models", "methodology", "hospital/overview?hospital_id=x", "hospital/forecast?hospital_id=x", "wait-options"]:
             result = client.get("/api/" + route)
             assert result.status_code == 401, (route, result.text)
             assert result.headers["cache-control"] == "no-store"
@@ -105,7 +105,7 @@ def test_object_scope_checked_before_any_data_or_model_work(accounts, monkeypatc
     monkeypatch.setattr(api, "ready", forbidden_work)
     a = signed_in("a")
     for target in [accounts["Hospital B"], "unknown"]:
-        for route in ["overview", "hospital/overview", "hospital/forecast", "wait-options", "signals", "quality"]:
+        for route in ["overview", "hospital/overview", "hospital/forecast", "wait-options"]:
             assert a.get(f"/api/{route}?hospital_id={target}").status_code == 404
         record = {"hospital_id": target, "icd10_ref_diag_code": "D", "bed_profile": "P", "territorial_type": "T", "referral_purpose": "R", "finance_source": "F", "registration_dt": "2025-03-20"}
         assert mutate(a, "/api/predictions/wait", record).status_code == 404
@@ -116,46 +116,8 @@ def test_object_scope_checked_before_any_data_or_model_work(accounts, monkeypatc
         assert a.get("/api/" + route).status_code == 403
     admin = signed_in("admin")
     assert admin.get("/api/overview").status_code == 403
-    for route in ['signals', 'quality', 'validation']:
-        assert admin.get('/api/' + route).status_code == 403
     assert mutate(admin, '/api/briefings/preview', {}).status_code == 403
     assert mutate(admin, '/api/briefings/pdf', {}).status_code == 403
-
-
-def test_new_monitoring_routes_keep_hospital_scope(accounts, analytical, monkeypatch):
-    calls = []
-    def feed(filters, *args, **kwargs):
-        calls.append(filters)
-        return {'items': [], 'total': 0}
-    monkeypatch.setattr(api, 'signal_feed', feed)
-    a = signed_in('a')
-    assert a.get('/api/signals?start=2025-01-20&profile=A-profile').status_code == 200
-    assert calls[-1]['hospital_mo'] == 'Hospital A'
-    assert calls[-1]['bed_profile'] == 'A-profile'
-    response = a.get('/api/quality').json()
-    assert response['stats']['referrals'] == 20
-    assert response['sources'] is None and response['preparation'] is None
-    assert 'Hospital B' not in str(response)
-    assert signed_in('gov').get('/api/quality').json()['stats']['referrals'] == 60
-
-
-def test_temporal_groups_are_scoped_even_with_requested_foreign_dimension(accounts, monkeypatch):
-    errors = {'mae': 2, 'baseline_mae': 4, 'rmse': 3}
-    report = {'waiting': {'pooled': {**errors, 'observations': 999}, 'folds': [], 'minimum_group_size': 30,
-                           'groups': {'hospital_mo': [dict(hospital_mo=name, observations=40, **errors) for name in ['Hospital A', 'Hospital B']],
-                                      'region_origin_code': [{'region_origin_code': '02', 'observations': 999, **errors}]}},
-              'forecast': {'pooled': errors, 'folds': [], 'by_horizon': []}, 'estimator_selection_overlap': True}
-    monkeypatch.setattr(api, 'validation_status', lambda: {'available': True, 'report': report})
-    a = signed_in('a')
-    body = a.get('/api/validation?group=region_origin_code&search=Hospital%20B').json()
-    assert body['groups']['dimension'] == 'hospital_mo'
-    assert [row['name'] for row in body['groups']['items']] == ['Hospital A']
-    assert body['waiting']['pooled']['mae'] == 2
-    assert 'observations' not in body['waiting']['pooled']
-    assert body['waiting_selection_overlap'] is True
-    monkeypatch.setattr(api, 'validation_status', lambda: {'available': False, 'report': report})
-    unavailable = a.get('/api/validation').json()
-    assert unavailable['available'] is False and 'waiting' not in unavailable
 
 
 def test_pdf_review_is_bound_to_server_data_filters_models_and_user(accounts, analytical, monkeypatch, tmp_path):

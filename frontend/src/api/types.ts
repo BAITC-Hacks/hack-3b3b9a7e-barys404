@@ -19,10 +19,7 @@ export type MetricRow = {
 }
 
 export type Bootstrap = {
-  period: {
-    start: string
-    end: string
-  }
+  period: { start: string; end: string }
   regions: string[]
   profiles: string[]
   hospitals: string[]
@@ -42,151 +39,44 @@ export type Overview = {
     eligible: number
     median_wait: number | null
   }
-  metric_minimum: number
-  trend: WeeklyPoint[]
-  attention_period: {
-    start?: string
-    end?: string
-    previous_start?: string
-    previous_end?: string
-  }
-  attention: {
-    hospital: string
-    current: number
-    previous: number
-    change_pct: number
-  }[]
-}
-
-export type WeeklyPoint = {
-  week: string
-  referrals: number
-  period_start: string
-  period_end: string
-  days_in_period: number
-  partial_week: boolean
-}
-
-export type EvaluationPeriod = {
-  start: string
-  end: string
-}
-
-export type ModelEvidence = {
-  status: {
-    available: boolean
-    stale: boolean
-    reason: string
-  }
-  model_version: string | null
-  test_period: Partial<EvaluationPeriod>
-  metrics: {
-    mae: number
-    baseline_mae: number
-    rmse: number
-  } | null
-}
-
-export type Methodology = {
-  waiting: ModelEvidence
-  flow: ModelEvidence
+  trend: { week: string; referrals: number }[]
+  attention_period: { start?: string; end?: string; previous_start?: string; previous_end?: string }
+  attention: { hospital: string; current: number; previous: number; change_pct: number }[]
 }
 
 export type HospitalDetail = {
   hospital: string
   stats: MetricRow | null
-  profiles: {
-    profile: string
-    referrals: number
-    eligible: number
-    median_wait: number | null
-  }[]
-  metric_minimum: number
+  profiles: { profile: string; referrals: number; eligible: number; median_wait: number | null }[]
 }
 
 export type Forecast = {
-  history: {
-    date: string
-    referrals: number
-  }[]
-  forecast: {
-    date: string
-    predicted_referrals: number
-  }[]
+  history: { date: string; referrals: number }[]
+  forecast: { date: string; predicted_referrals: number }[]
   total: number
   history_end: string
-  metrics: {
-    mae: number
-    baseline_mae: number
-    improvement_pct: number
-  }
-  metrics_by_horizon: {
-    horizon: number
-    mae: number
-    baseline_mae: number
-  }[]
-  model_version: string
-  test_period: EvaluationPeriod
+  metrics: { mae: number; baseline_mae: number; improvement_pct: number }
+  metrics_by_horizon: { horizon: number; mae: number; baseline_mae: number }[]
 }
 
 export type ModelInfo = {
   waiting: {
-    status: {
-      available: boolean
-      stale: boolean
-      reason: string
-    }
-    model_version: string | null
-    metrics: {
-      mae: number
-      rmse: number
-      baseline_mae: number
-      improvement_pct: number
-    } | null
-    test_period: {
-      start: string
-      end: string
-    }
-    rows: {
-      train: number
-      test: number
-    }
+    status: { available: boolean; stale: boolean; reason: string }
+    metrics: { mae: number; rmse: number; baseline_mae: number; improvement_pct: number }
+    test_period: { start: string; end: string }
+    rows: { train: number; test: number }
   }
   flow: {
-    status: {
-      available: boolean
-      stale: boolean
-      reason: string
-    }
-    model_version: string | null
-    metrics: {
-      mae: number
-      rmse: number
-      baseline_mae: number
-      improvement_pct: number
-    } | null
+    status: { available: boolean; stale: boolean; reason: string }
+    metrics: { mae: number; rmse: number; baseline_mae: number; improvement_pct: number }
     history_end: string
-    test_period: {
-      start: string
-      end: string
-    }
-    metrics_by_horizon: {
-      horizon: number
-      mae: number
-      baseline_mae: number
-    }[]
+    test_period: { start: string; end: string }
+    metrics_by_horizon: { horizon: number; mae: number; baseline_mae: number }[]
   }
   data: {
     ready: boolean
     summary: Record<string, number | string>
-    coverage: Record<
-      string,
-      {
-        complete: boolean
-        file_count: number
-        expected_parts: number
-      }
-    >
+    coverage: Record<string, { complete: boolean; file_count: number; expected_parts: number }>
     created_at: string
   }
 }
@@ -202,37 +92,17 @@ export type WaitOptions = {
 }
 
 export type WaitResult = (
-  | {
-      clipped: true
-      prediction: null
-    }
-  | {
-      clipped: false
-      prediction: number
-    }
+  { clipped: true; prediction: null } | { clipped: false; prediction: number }
 ) & {
   raw_prediction: number
   method: string
   support: number
   training_cutoff: string
-  group_quality: {
-    observations: number
-    mae: number
-  } | null
-  reference: {
-    eligible: number
-    median_wait_days: number | null
-  }
+  group_quality: { observations: number; mae: number } | null
+  reference: { eligible: number; median_wait_days: number | null }
   mae: number
   tested_until: string
-  contributions: {
-    feature: string
-    label: string
-    contribution: number
-  }[]
-  model_version: string
-  test_period: EvaluationPeriod
-  baseline_mae: number
+  contributions: { feature: string; label: string; contribution: number }[]
 }
 
 export type User = {
@@ -245,90 +115,6 @@ export type User = {
   hospital_name: string | null
   must_change_password: boolean
 }
-
-export type SignalFeed = {
-  total: number
-  hospital_days: number
-  insufficient_history_days: number
-  history_window: number
-  minimum_history: number
-  items: {
-    hospital: string
-    date: string
-    history_days: number
-    reference_start: string
-    reference_end: string
-    reasons: {
-      kind: string
-      label: string
-      value: number
-      threshold: number
-    }[]
-  }[]
-}
-
-export type DataQuality = {
-  stats: Overview['stats']
-  hospital: string | null
-  prepared_at: string
-  sources:
-    | {
-        category: string
-        file_count: number
-        expected_parts: number
-        complete: boolean
-        rows: number
-      }[]
-    | null
-  preparation: Record<string, number | null> | null
-}
-
-export type ErrorMetrics = {
-  mae: number
-  baseline_mae: number
-  rmse: number
-  improvement_pct: number | null
-  seasonal_baseline_mae: number | null
-  p90_absolute_error: number | null
-}
-
-export type Validation =
-  | {
-      available: false
-      reason: string
-    }
-  | {
-      available: true
-      created_at: string
-      hospital: string | null
-      waiting_selection_overlap: boolean
-      minimum_group_size: number
-      waiting: {
-        pooled: ErrorMetrics
-        folds: (ErrorMetrics & {
-          test_start: string
-          test_end: string
-        })[]
-      }
-      forecast: {
-        pooled: ErrorMetrics
-        folds: (ErrorMetrics & {
-          test_start: string
-          test_end: string
-        })[]
-        by_horizon: (ErrorMetrics & {
-          horizon: number
-        })[]
-      }
-      groups: {
-        dimension: string
-        total: number
-        items: (ErrorMetrics & {
-          name: string
-          observations: number
-        })[]
-      }
-    }
 
 export type BriefingInput = {
   hospital_ids: string[]

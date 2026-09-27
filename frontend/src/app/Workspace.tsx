@@ -17,9 +17,6 @@ import { ForecastsPage } from '../pages/ForecastsPage'
 import { HospitalPage } from '../pages/HospitalPage'
 import { HospitalsPage } from '../pages/HospitalsPage'
 import { OverviewPage } from '../pages/OverviewPage'
-import { QualityPage } from '../pages/QualityPage'
-import { SignalsPage } from '../pages/SignalsPage'
-import { ValidationPage } from '../pages/ValidationPage'
 import { currentRoute, NAV, type Mode, type NavItem, type View } from './navigation'
 
 export function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
@@ -27,7 +24,6 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
   const mode: Mode = user.role === 'hospital_analyst' ? 'hospital' : 'government'
   const [route, setRoute] = useState(currentRoute)
   const [hospital, setHospital] = useState('')
-  const [analysisHospital, setAnalysisHospital] = useState('')
   const [filters, setFilters] = useState<Filters>({ start: '', end: '', region: '', profile: '' })
   const [menuOpen, setMenuOpen] = useState(false)
   const [compareFocus, setCompareFocus] = useState('')
@@ -66,17 +62,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
   }
   const openHospital = (name: string) => {
     setHospital(name)
-    setAnalysisHospital(name)
     navigate('hospital', name)
-  }
-  const openForecast = (name: string) => {
-    setHospital(name)
-    setAnalysisHospital(name)
-    navigate('forecasts')
-  }
-  const inspectHospital = (view: 'signals' | 'quality') => {
-    setAnalysisHospital(hospital)
-    navigate(view)
   }
   const openComparison = () => {
     setCompareFocus(hospital)
@@ -97,7 +83,6 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
               : [item],
         )
       : NAV
-  const scopedHospital = mode === 'hospital' ? hospital : analysisHospital
   return (
     <div className="app-shell">
       <Sidebar
@@ -160,22 +145,8 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                 />
               ) : (
                 <>
-                  {mode === 'government' && ['signals', 'quality'].includes(activeView) && (
-                    <div className="hospital-context">
-                      <span className="context-label">Область анализа</span>
-                      <HospitalChooser
-                        hospital={analysisHospital || 'Все стационары'}
-                        hospitals={['Все стационары', ...boot.data.hospitals]}
-                        choose={(name) =>
-                          setAnalysisHospital(name === 'Все стационары' ? '' : name)
-                        }
-                      />
-                    </div>
-                  )}
                   {activeView === 'overview' && <Onboarding user={user} go={navigate} />}
-                  {['overview', 'hospitals', 'hospital', 'compare', 'signals', 'quality'].includes(
-                    activeView,
-                  ) && (
+                  {['overview', 'hospitals', 'hospital', 'compare'].includes(activeView) && (
                     <FilterBar filters={filters} setFilters={setFilters} bootstrap={boot.data} />
                   )}
                   {activeView === 'overview' && (
@@ -197,7 +168,6 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                       mode={mode}
                       go={navigate}
                       compare={openComparison}
-                      inspect={inspectHospital}
                     />
                   )}
                   {activeView === 'compare' && (
@@ -213,22 +183,6 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                       go={navigate}
                       canChoose={mode === 'government'}
                     />
-                  )}
-                  {activeView === 'signals' && (
-                    <SignalsPage
-                      key={JSON.stringify([filters, scopedHospital])}
-                      filters={filters}
-                      hospital={scopedHospital}
-                      openHospital={openHospital}
-                      forecast={openForecast}
-                      quality={() => navigate('quality')}
-                    />
-                  )}
-                  {activeView === 'quality' && (
-                    <QualityPage filters={filters} hospital={scopedHospital} />
-                  )}
-                  {activeView === 'validation' && (
-                    <ValidationPage hospitalRole={mode === 'hospital'} />
                   )}
                   {activeView === 'data' && <DataPage />}
                 </>

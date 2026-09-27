@@ -118,50 +118,6 @@
   font-size: 0.875rem;
 }
 
-.outcome-fill.amber {
-  background: #b17d2b;
-}
-
-.partial-weeks {
-  margin-top: 16px;
-  padding: 14px;
-  border: 1px solid #e9dcc3;
-  border-radius: 10px;
-  background: #fffbf3;
-  font-size: 0.875rem;
-  color: #705a30;
-}
-
-.partial-weeks > p {
-  margin: 5px 0 10px;
-  line-height: 1.6;
-}
-
-.partial-weeks > div {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 0;
-  border-top: 1px solid #eee3d0;
-}
-
-.partial-weeks small {
-  white-space: nowrap;
-}
-
-.evaluation-caption {
-  overflow-wrap: anywhere;
-  font-size: 0.875rem;
-  line-height: 1.7;
-  margin-top: 14px !important;
-}
-
-.quality-callout > .status-pill {
-  display: table;
-  margin-top: 12px;
-}
-
 .outcome-track {
   height: 8px;
   background: #f0f3f1;
