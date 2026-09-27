@@ -1,0 +1,180 @@
+.compare-layout {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.compare-picker {
+  max-height: 660px;
+  overflow: auto;
+}
+
+.selection-count {
+  font-size: 0.875rem;
+  color: #86a09a;
+  font-weight: 800;
+}
+
+.compare-options {
+  display: grid;
+  gap: 3px;
+}
+
+.compare-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 8px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #587773;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.compare-option:hover {
+  background: #f5faf7;
+}
+
+.compare-option input {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  opacity: 0;
+}
+
+.custom-check {
+  width: 17px;
+  height: 17px;
+  border: 1px solid #bed0ca;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  color: transparent;
+  flex-shrink: 0;
+}
+
+.compare-option input:checked + .custom-check {
+  background: #208f82;
+  border-color: #208f82;
+  color: #fff;
+}
+
+.compare-option input:focus-visible + .custom-check {
+  outline: 3px solid #a1dcd3;
+}
+
+.compare-option input:disabled ~ span {
+  opacity: 0.45;
+}
+
+.compare-results {
+  min-height: 540px;
+}
+
+.compare-bars {
+  display: grid;
+  gap: 27px;
+  margin: 41px 0 35px;
+}
+
+.compare-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) 68px;
+  gap: 16px;
+  align-items: center;
+}
+
+.compare-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: #456b66;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.compare-name b {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: #197d72;
+  background: #e2f3ed;
+  flex-shrink: 0;
+}
+
+.compare-name span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.compare-track {
+  height: 20px;
+  border-radius: 6px;
+  background: #f0f5f2;
+  overflow: hidden;
+}
+
+.compare-track i {
+  height: 100%;
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #77d1bb, #24a696);
+  min-width: 2px;
+}
+
+.compare-bar-row strong {
+  text-align: right;
+  color: #255c56;
+  font-size: 0.875rem;
+}
+
+.compare-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compare-card {
+  background: #f7faf8;
+  border: 1px solid #e6efeb;
+  border-radius: 10px;
+  text-align: left;
+  padding: 15px;
+  color: #597a74;
+}
+
+.compare-card:hover {
+  border-color: #96d1c5;
+  background: #f1f9f5;
+}
+
+.compare-card span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.compare-card strong {
+  display: block;
+  font-size: 20px;
+  color: #295d56;
+  margin: 13px 0 4px;
+}
+
+.compare-card small {
+  font-size: 0.875rem;
+  color: #607970;
+}

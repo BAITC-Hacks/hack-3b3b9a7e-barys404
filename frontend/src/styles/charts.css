@@ -1,0 +1,24 @@
+.chart-wrap {
+  width: 100%;
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+}
+
+.chart-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: #e9f0ee;
+  stroke-width: 1;
+}
+
+.chart-label {
+  font-size: 0.875rem;
+  fill: #607970;
+  font-weight: 600;
+}

@@ -1,0 +1,47 @@
+.page-heading p {
+  font-size: 0.875rem;
+}
+
+.panel-heading p,
+.panel > p,
+.forecast-summary p,
+.data-intro p {
+  font-size: 0.875rem;
+}
+
+.metric-top {
+  font-size: 0.875rem;
+}
+
+.metric-note {
+  font-size: 0.875rem;
+}
+
+.section-kicker,
+.eyebrow {
+  font-size: 0.875rem;
+}
+
+.page-note {
+  font-size: 0.875rem;
+}
+
+.profile-row,
+.compare-option,
+.attention-text strong,
+.top-hospital,
+.forecast-days > div {
+  font-size: 0.875rem;
+}
+
+@media (max-width: 520px) {
+  .metric-note {
+    font-size: 0.875rem;
+  }
+  .compare-option {
+    line-height: 1.5;
+  }
+  .page-heading p {
+    font-size: 0.875rem;
+  }
+}

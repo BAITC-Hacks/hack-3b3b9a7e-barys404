@@ -1,0 +1,143 @@
+@media (max-width: 1080px) {
+  .welcome-hero {
+    gap: 30px;
+    padding-top: 40px;
+  }
+  .welcome-copy h1 {
+    font-size: 42px;
+  }
+  .welcome-visual {
+    padding: 20px;
+  }
+  .welcome-method {
+    grid-template-columns: 1fr 1fr;
+  }
+  .login-story {
+    padding: 40px;
+  }
+  .topbar-actions {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .public-header {
+    padding: 22px 24px;
+  }
+  .public-brand {
+    font-size: 21px;
+  }
+  .welcome-hero {
+    grid-template-columns: 1fr;
+    padding: 35px 24px 40px;
+    gap: 35px;
+  }
+  .welcome-copy h1 {
+    font-size: 43px;
+  }
+  .welcome-copy > p {
+    font-size: 14px;
+  }
+  .welcome-visual {
+    transform: none;
+    max-width: 520px;
+    width: 100%;
+    justify-self: center;
+  }
+  .welcome-audiences {
+    grid-template-columns: 1fr;
+    padding: 0 24px 30px;
+    gap: 12px;
+  }
+  .welcome-audiences article {
+    padding: 23px;
+  }
+  .welcome-method {
+    margin: 0 24px;
+    gap: 20px;
+  }
+  .public-footer {
+    padding: 22px 24px;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+  .login-story {
+    padding: 24px;
+  }
+  .login-story > div,
+  .login-security {
+    display: none;
+  }
+  .login-main {
+    padding: 70px 24px 35px;
+  }
+  .login-main > .back-link {
+    top: 22px;
+    left: 24px;
+  }
+  .login-form-card h2 {
+    font-size: 27px;
+  }
+  .user-menu strong {
+    max-width: 120px;
+    font-size: 0.875rem;
+  }
+  .user-menu {
+    gap: 8px;
+  }
+  .methodology-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .public-header {
+    gap: 10px;
+  }
+  .public-header .secondary-button {
+    font-size: 0.875rem;
+    padding: 10px;
+  }
+  .public-brand .brand-mark {
+    width: 35px;
+    height: 35px;
+  }
+  .public-brand {
+    font-size: 18px;
+    gap: 8px;
+  }
+  .public-brand small {
+    font-size: 0.875rem;
+  }
+  .welcome-copy h1 {
+    font-size: 36px;
+  }
+  .welcome-method {
+    grid-template-columns: 1fr;
+  }
+  .welcome-audiences article {
+    gap: 13px;
+  }
+  .welcome-audiences h2 {
+    font-size: 17px;
+  }
+  .public-eyebrow {
+    font-size: 0.875rem;
+  }
+  .welcome-cta {
+    font-size: 0.875rem;
+    padding: 14px;
+  }
+  .topbar .breadcrumbs strong {
+    font-size: 0.875rem;
+  }
+  .user-menu strong {
+    max-width: 95px;
+  }
+  .user-menu small {
+    font-size: 0.875rem;
+  }
+}

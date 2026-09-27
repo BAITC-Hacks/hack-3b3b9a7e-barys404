@@ -1,0 +1,278 @@
+.sidebar {
+  overflow-y: auto;
+}
+
+.workspace-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 17px 20px;
+  background: #eaf4f1;
+  border: 1px solid #d2e7df;
+  border-radius: 12px;
+  margin: 18px 0;
+  color: #355d56;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.workspace-note svg {
+  margin-top: 3px;
+  color: #218c7c;
+}
+
+.workspace-toolbar,
+.workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.workspace-toolbar {
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.workspace-toolbar label,
+.briefing-question {
+  display: grid;
+  gap: 7px;
+  font-size: 0.875rem;
+  color: #55736b;
+  font-weight: 650;
+  max-width: 100%;
+}
+
+.workspace-toolbar select,
+.workspace-toolbar input,
+.briefing-question select {
+  border: 1px solid #d6e5df;
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #214d45;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.briefing-question {
+  width: fit-content;
+  margin: 18px 0;
+}
+
+.signal-list {
+  display: grid;
+  gap: 16px;
+}
+
+.signal-heading {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+}
+
+.signal-heading > svg {
+  color: #1e9483;
+  margin-top: 5px;
+}
+
+.signal-heading h2 {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 7px 0 12px;
+  overflow-wrap: anywhere;
+}
+
+.signal-reasons {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.signal-reasons li {
+  display: grid;
+  gap: 5px;
+  border-left: 3px solid #e6b775;
+  padding: 7px 14px;
+  background: #fcfaf5;
+  border-radius: 0 8px 8px 0;
+}
+
+.signal-reasons span {
+  font-size: 0.875rem;
+  color: #64736c;
+}
+
+.signal-card .workspace-actions {
+  margin-bottom: 0;
+}
+
+.evidence-section {
+  margin-top: 22px;
+}
+
+.evidence-section > p,
+.briefing-preview > p {
+  line-height: 1.7;
+  color: #5b746c;
+  font-size: 0.9rem;
+}
+
+.evidence-table-wrap {
+  overflow-x: auto;
+  margin: 17px 0;
+}
+
+.evidence-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.evidence-table th,
+.evidence-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 13px 15px;
+  border-bottom: 1px solid #e3ece7;
+}
+
+.evidence-table thead {
+  background: #edf5f1;
+  color: #4f7065;
+}
+
+.evidence-table tbody th {
+  font-weight: 600;
+  min-width: 150px;
+  max-width: 450px;
+  overflow-wrap: anywhere;
+}
+
+.evidence-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.evidence-table tbody tr:nth-child(even) {
+  background: #f9fcfa;
+}
+
+.integrity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin: 24px 0;
+}
+
+.integrity-grid > div {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  background: #f0f7f3;
+  border-radius: 10px;
+}
+
+.integrity-grid span {
+  color: #607e71;
+  font-size: 0.875rem;
+}
+
+.integrity-grid strong {
+  font-size: 1.7rem;
+  letter-spacing: -0.035em;
+  color: #245d4e;
+}
+
+.quality-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.quality-facts div {
+  padding: 12px 0;
+  border-bottom: 1px solid #e5ede8;
+}
+
+.quality-facts dt {
+  font-size: 0.875rem;
+  color: #60796d;
+  line-height: 1.6;
+}
+
+.quality-facts dd {
+  margin: 6px 0 0;
+  font-size: 1.2rem;
+  font-weight: 650;
+}
+
+.evidence-caution {
+  border-left: 3px solid #d8ae69;
+  padding: 12px 16px;
+  background: #fcf7ef;
+  border-radius: 0 9px 9px 0;
+}
+
+.briefing-preview {
+  padding: 18px;
+  margin: 20px 0;
+  border: 1px solid #c9e0d5;
+  border-radius: 12px;
+  background: #f7fbf8;
+}
+
+.briefing-preview h3 {
+  margin-bottom: 8px;
+}
+
+.review-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  line-height: 1.65;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: #255b48;
+  border-top: 1px solid #d6e6dd;
+  padding-top: 17px;
+  margin-top: 17px;
+}
+
+.review-check input {
+  accent-color: #147c78;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+@media (max-width: 680px) {
+  .integrity-grid,
+  .quality-facts {
+    grid-template-columns: 1fr;
+  }
+  .workspace-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .workspace-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .briefing-preview {
+    padding: 12px;
+  }
+  .workspace-note {
+    flex-wrap: wrap;
+  }
+  .evidence-table th,
+  .evidence-table td {
+    padding: 10px;
+  }
+}

@@ -1,0 +1,200 @@
+.directory-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.directory-toolbar {
+  padding: 21px 23px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.directory-filter-note {
+  padding: 0 23px 14px;
+  color: #6a8c84;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(440px, 100%);
+  height: 40px;
+  border: 1px solid #dfeae6;
+  border-radius: 9px;
+  color: #8aa4a0;
+  padding: 0 11px;
+  background: #fcfefd;
+}
+
+.search-field input {
+  outline: 0;
+  border: 0;
+  background: transparent;
+  flex: 1;
+  min-width: 0;
+  color: #254b4d;
+  font-size: 0.875rem;
+}
+
+.search-field input::placeholder {
+  color: #607970;
+}
+
+.search-field button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #8aa4a0;
+  padding: 0;
+}
+
+.result-count {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #607970;
+  white-space: nowrap;
+}
+
+.table-head,
+.hospital-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 105px 88px 17px;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-head {
+  padding: 12px 23px;
+  background: #f7faf8;
+  border-top: 1px solid #edf3f0;
+  border-bottom: 1px solid #edf3f0;
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #607970;
+}
+
+.hospital-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #edf2f0;
+  background: #fff;
+  text-align: left;
+  padding: 12px 23px;
+  color: #42605f;
+  transition: background 0.15s;
+}
+
+.hospital-row:hover {
+  background: #f5faf7;
+}
+
+.hospital-cell {
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  overflow: hidden;
+}
+
+.name-cell > span:last-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hospital-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #e8f4f1;
+  color: #409c90;
+}
+
+.numeric-cell {
+  color: #466e69;
+}
+
+.numeric-cell small {
+  color: #607970;
+}
+
+.row-chevron {
+  color: #a9bdb7;
+}
+
+.table-end {
+  text-align: center;
+  color: #607970;
+  font-size: 0.875rem;
+  padding: 17px;
+}
+
+.directory-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 23px;
+  color: #72938b;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.directory-pagination > div {
+  display: flex;
+  gap: 7px;
+}
+
+.directory-pagination button {
+  border: 1px solid #dce9e5;
+  background: #fff;
+  color: #277d72;
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.directory-pagination button:hover:not(:disabled) {
+  background: #edf8f4;
+}
+
+.directory-pagination button:disabled {
+  color: #b0c1bb;
+  cursor: not-allowed;
+}
+
+.page-note {
+  color: #607970;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  margin: 15px 1px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: #3c9286;
+  font-weight: 800;
+  font-size: 0.875rem;
+  padding: 0;
+  margin: 4px 0 17px;
+}
