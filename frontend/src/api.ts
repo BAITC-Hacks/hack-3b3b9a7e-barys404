@@ -39,15 +39,35 @@ export type Overview = {
     eligible: number
     median_wait: number | null
   }
-  trend: { week: string; referrals: number }[]
+  metric_minimum: number
+  trend: WeeklyPoint[]
   attention_period: { start?: string; end?: string; previous_start?: string; previous_end?: string }
   attention: { hospital: string; current: number; previous: number; change_pct: number }[]
 }
+
+export type WeeklyPoint = {
+  week: string
+  referrals: number
+  period_start: string
+  period_end: string
+  days_in_period: number
+  partial_week: boolean
+}
+
+export type EvaluationPeriod = { start: string; end: string }
+export type ModelEvidence = {
+  status: { available: boolean; stale: boolean; reason: string }
+  model_version: string | null
+  test_period: Partial<EvaluationPeriod>
+  metrics: { mae: number; baseline_mae: number; rmse: number } | null
+}
+export type Methodology = { waiting: ModelEvidence; flow: ModelEvidence }
 
 export type HospitalDetail = {
   hospital: string
   stats: MetricRow | null
   profiles: { profile: string; referrals: number; eligible: number; median_wait: number | null }[]
+  metric_minimum: number
 }
 
 export type Forecast = {
@@ -57,18 +77,22 @@ export type Forecast = {
   history_end: string
   metrics: { mae: number; baseline_mae: number; improvement_pct: number }
   metrics_by_horizon: { horizon: number; mae: number; baseline_mae: number }[]
+  model_version: string
+  test_period: EvaluationPeriod
 }
 
 export type ModelInfo = {
   waiting: {
     status: { available: boolean; stale: boolean; reason: string }
-    metrics: { mae: number; rmse: number; baseline_mae: number; improvement_pct: number }
+    model_version: string | null
+    metrics: { mae: number; rmse: number; baseline_mae: number; improvement_pct: number } | null
     test_period: { start: string; end: string }
     rows: { train: number; test: number }
   }
   flow: {
     status: { available: boolean; stale: boolean; reason: string }
-    metrics: { mae: number; rmse: number; baseline_mae: number; improvement_pct: number }
+    model_version: string | null
+    metrics: { mae: number; rmse: number; baseline_mae: number; improvement_pct: number } | null
     history_end: string
     test_period: { start: string; end: string }
     metrics_by_horizon: { horizon: number; mae: number; baseline_mae: number }[]
@@ -101,6 +125,9 @@ export type WaitResult = ({ clipped: true; prediction: null } | { clipped: false
   mae: number
   tested_until: string
   contributions: { feature: string; label: string; contribution: number }[]
+  model_version: string
+  test_period: EvaluationPeriod
+  baseline_mae: number
 }
 
 export function query(params: Record<string, string | number | undefined | null>) {
@@ -138,7 +165,7 @@ export function clearPrivateData() {
   pending.clear()
 }
 
-async function request<T>(path: string, payload?: unknown, signal?: AbortSignal): Promise<T> {
+async function request<T>(path: string, payload?: unknown, signal?: AbortSignal, format: 'json' | 'blob' = 'json'): Promise<T> {
   const version = generation
   const controller = new AbortController()
   const abort = () => controller.abort()
@@ -156,7 +183,7 @@ async function request<T>(path: string, payload?: unknown, signal?: AbortSignal)
       method: payload === undefined ? 'GET' : 'POST', headers,
       body: payload === undefined ? undefined : JSON.stringify(payload),
     })
-    const data = await response.json().catch(() => null)
+    const data = response.ok && format === 'blob' ? await response.blob() : await response.json().catch(() => null)
     if (version !== generation) throw new DOMException('Запрос отменён', 'AbortError')
     if (!response.ok) {
       if (response.status === 401 && !['/auth/login', '/auth/me'].includes(path)) window.dispatchEvent(new Event('session-expired'))
@@ -171,10 +198,36 @@ async function request<T>(path: string, payload?: unknown, signal?: AbortSignal)
 }
 
 export const get = <T>(path: string, signal?: AbortSignal) => request<T>(path, undefined, signal)
-export function post<T>(path: string, payload: unknown): Promise<T> {
+export function post<T>(path: string, payload: unknown, signal?: AbortSignal): Promise<T> {
   if (path === '/predictions/wait') {
     const { hospital_mo, ...values } = payload as Record<string, string>
     payload = { ...values, hospital_id: hospitalId(hospital_mo) }
   }
-  return request<T>(path, payload)
+  return request<T>(path, payload, signal)
+}
+
+export const postPdf = (path: string, payload: unknown, signal?: AbortSignal) => request<Blob>(path, payload, signal, 'blob')
+
+export type SignalFeed = {
+  total: number; hospital_days: number; insufficient_history_days: number; history_window: number; minimum_history: number
+  items: { hospital: string; date: string; history_days: number; reference_start: string; reference_end: string
+    reasons: { kind: string; label: string; value: number; threshold: number }[] }[]
+}
+export type DataQuality = {
+  stats: Overview['stats']; hospital: string | null; prepared_at: string
+  sources: { category: string; file_count: number; expected_parts: number; complete: boolean; rows: number }[] | null
+  preparation: Record<string, number | null> | null
+}
+export type ErrorMetrics = { mae: number; baseline_mae: number; rmse: number; improvement_pct: number | null; seasonal_baseline_mae: number | null; p90_absolute_error: number | null }
+export type Validation = { available: false; reason: string } | {
+  available: true; created_at: string; hospital: string | null; waiting_selection_overlap: boolean; minimum_group_size: number
+  waiting: { pooled: ErrorMetrics; folds: (ErrorMetrics & { test_start: string; test_end: string })[] }
+  forecast: { pooled: ErrorMetrics; folds: (ErrorMetrics & { test_start: string; test_end: string })[]; by_horizon: (ErrorMetrics & { horizon: number })[] }
+  groups: { dimension: string; total: number; items: (ErrorMetrics & { name: string; observations: number })[] }
+}
+export type BriefingInput = { hospital_ids: string[]; start: string; end: string; region: string; profile: string; minimum: number; question: 'waiting' | 'flow' | 'refusals' }
+export type BriefingPreview = {
+  review_token: string
+  snapshot: { filters: { start: string; end: string; region_origin_code?: string; bed_profile?: string }; minimum_group_size: number; review_question: string; aggregates: MetricRow[] }
+  metrics: Record<string, { mae: number; baseline_mae: number; model_version: string; period: string }>
 }

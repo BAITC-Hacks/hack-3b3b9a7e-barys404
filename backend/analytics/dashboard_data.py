@@ -4,7 +4,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from backend.core.config import ANALYTICAL_PATH, DUCKDB_MEMORY_LIMIT, THREAD_COUNT
+from backend.core.config import ANALYTICAL_PATH, DUCKDB_MEMORY_LIMIT, THREAD_COUNT, MIN_METRIC_GROUP_SIZE
 
 
 DIMENSIONS = {"region_origin_code", "hospital_mo", "bed_profile"}
@@ -63,11 +63,44 @@ def overview(filters, path=ANALYTICAL_PATH):
         count(*) FILTER (WHERE outcome = 'conflicting') AS conflicting,
         count(*) FILTER (WHERE outcome = 'invalid_outcome') AS invalid_outcome,
         count(*) FILTER (WHERE target_eligible) AS eligible,
-        avg(wait_days) FILTER (WHERE target_eligible) AS mean_wait,
-        median(wait_days) FILTER (WHERE target_eligible) AS median_wait,
+        CASE WHEN count(*) FILTER (WHERE target_eligible) >= {MIN_METRIC_GROUP_SIZE}
+          THEN avg(wait_days) FILTER (WHERE target_eligible) END AS mean_wait,
+        CASE WHEN count(*) FILTER (WHERE target_eligible) >= {MIN_METRIC_GROUP_SIZE}
+          THEN median(wait_days) FILTER (WHERE target_eligible) END AS median_wait,
         count(DISTINCT hospital_mo) AS hospitals
         FROM read_parquet(?) WHERE {where}"""
     return aggregate_query(path, sql, params).iloc[0].to_dict()
+
+
+def weekly_trend(filters, path=ANALYTICAL_PATH):
+    """Calendar weeks with explicit coverage; boundaries respect the caller's scope.
+
+    Coverage means the intersection of the selected dates and the observed source
+    interval, not proof that every source event was delivered. Empty interior weeks
+    mean no records in these files, not missing calendar positions in the chart.
+    """
+    columns = ["week", "referrals", "period_start", "period_end", "days_in_period", "partial_week"]
+    scope = {key: value for key, value in filters.items() if key not in {"start", "end"}}
+    where, params = cohort_where(scope)
+    bounds = aggregate_query(path, f"""SELECT min(registration_dt) AS first,
+        max(registration_dt) AS last FROM read_parquet(?) WHERE {where}""", params).iloc[0]
+    if pd.isna(bounds["first"]) or pd.isna(bounds["last"]):
+        return pd.DataFrame(columns=columns)
+    start = max(pd.Timestamp(bounds["first"]).normalize(), pd.Timestamp(filters.get("start") or bounds["first"]).normalize())
+    end = min(pd.Timestamp(bounds["last"]).normalize(), pd.Timestamp(filters.get("end") or bounds["last"]).normalize())
+    if start > end:
+        return pd.DataFrame(columns=columns)
+    where, params = cohort_where(filters)
+    observed = aggregate_query(path, f"""SELECT CAST(date_trunc('week', registration_dt) AS DATE) AS week,
+        count(*) AS referrals FROM read_parquet(?) WHERE {where}
+        GROUP BY 1 ORDER BY 1""", params)
+    weeks = pd.date_range(start - pd.Timedelta(days=start.weekday()), end, freq="W-MON")
+    result = observed.set_index("week").reindex(weeks, fill_value=0).rename_axis("week").reset_index()
+    result["period_start"] = result.week.clip(lower=start)
+    result["period_end"] = (result.week + pd.Timedelta(days=6)).clip(upper=end)
+    result["days_in_period"] = (result.period_end - result.period_start).dt.days + 1
+    result["partial_week"] = result.days_in_period.lt(7)
+    return result[columns]
 
 
 def historical_charts(filters, path=ANALYTICAL_PATH):
@@ -85,12 +118,13 @@ def historical_charts(filters, path=ANALYTICAL_PATH):
         """, params)
     waits = aggregate_query(path, f"""SELECT floor(wait_days)::INTEGER AS waiting_day,
         count(*) AS records FROM read_parquet(?) WHERE {where} AND target_eligible
-        GROUP BY waiting_day ORDER BY waiting_day""", params)
+        GROUP BY waiting_day HAVING count(*) >= {MIN_METRIC_GROUP_SIZE} ORDER BY waiting_day""", params)
     hospitals = aggregate_query(path, f"""SELECT hospital_mo AS hospital,
         count(*) AS referrals, count(*) FILTER (WHERE outcome='unresolved') AS unresolved,
         count(*) FILTER (WHERE outcome='hospitalized') AS hospitalized,
         count(*) FILTER (WHERE outcome='refused') AS refused,
-        avg(wait_days) FILTER (WHERE target_eligible) AS mean_wait_days
+        CASE WHEN count(*) FILTER (WHERE target_eligible) >= {MIN_METRIC_GROUP_SIZE}
+          THEN avg(wait_days) FILTER (WHERE target_eligible) END AS mean_wait_days
         FROM read_parquet(?) WHERE {where} GROUP BY hospital_mo
         ORDER BY referrals DESC LIMIT 20""", params)
     return events, waits, hospitals
@@ -120,7 +154,7 @@ def compare_groups(filters, group_by="hospital_mo", minimum=30, path=ANALYTICAL_
     """Descriptive comparisons, never a capacity or clinical-quality ranking."""
     if group_by not in {"hospital_mo", "region_origin_code"}:
         raise ValueError("Compare hospitals or origin regions only.")
-    if minimum < 10:
+    if minimum < MIN_METRIC_GROUP_SIZE:
         raise ValueError("At least ten referrals per comparison group are required.")
     where, params = cohort_where(filters)
     return _comparison_query(path, where, params, group_by, minimum)
@@ -130,12 +164,12 @@ def hospital_directory(filters, path=ANALYTICAL_PATH):
     """List every observed hospital; suppress unstable rates for small groups."""
     where, params = cohort_where(filters)
     return _comparison_query(path, f"({where}) AND hospital_mo IS NOT NULL", params,
-                             "hospital_mo", minimum=1, metric_minimum=10)
+                             "hospital_mo", minimum=1, metric_minimum=MIN_METRIC_GROUP_SIZE)
 
 
 def _comparison_query(path, where, params, group_by, minimum, metric_minimum=None):
     # Keep the source parameter first; thresholds are validated integers.
-    metric_minimum = int(metric_minimum if metric_minimum is not None else minimum)
+    metric_minimum = max(MIN_METRIC_GROUP_SIZE, int(metric_minimum if metric_minimum is not None else minimum))
     return aggregate_query(path, f"""
         WITH source AS (SELECT {group_by}, outcome, target_eligible, wait_days FROM read_parquet(?) WHERE {where})
         SELECT COALESCE({group_by}, 'Unknown') AS organization_or_region,
@@ -234,7 +268,7 @@ def hospital_profiles(filters, path=ANALYTICAL_PATH):
     where, params = cohort_where(filters)
     return aggregate_query(path, f"""SELECT COALESCE(bed_profile, 'Не указан') AS profile,
         count(*) AS referrals, count(*) FILTER(WHERE target_eligible) AS eligible,
-        CASE WHEN count(*) FILTER(WHERE target_eligible) >= 10
+        CASE WHEN count(*) FILTER(WHERE target_eligible) >= {MIN_METRIC_GROUP_SIZE}
         THEN median(wait_days) FILTER(WHERE target_eligible) END AS median_wait
         FROM read_parquet(?) WHERE {where} GROUP BY 1 ORDER BY referrals DESC, profile LIMIT 8""", params)
 

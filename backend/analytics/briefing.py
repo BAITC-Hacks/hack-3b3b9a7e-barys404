@@ -103,7 +103,8 @@ def build_briefing_pdf(payload, metrics):
         for label, key, unit in [("Ожидание", "waiting", "дня"), ("Поток на 7 дней", "forecast", "направления / организацию / день")]:
             result = metrics.get(key)
             if result:
-                story.append(p(f"{label}: MAE {_num(result.get('mae'), 2)} {unit}; базовый прогноз {_num(result.get('baseline_mae'), 2)}. Тест: {text(result.get('period', '-'))}.", small))
+                version = f" Версия: {text(result['model_version'])}." if result.get('model_version') is not None else ''
+                story.append(p(f"{label}: MAE {_num(result.get('mae'), 2)} {unit}; базовый прогноз {_num(result.get('baseline_mae'), 2)}.{version} Тест: {text(result.get('period', '-'))}.", small))
             else:
                 story.append(p(f"{label}: актуальные метрики недоступны.", small))
         story.append(p("Ошибки выше относятся ко всему тестовому набору, не к выбранным группам. Прогноз потока не оценивает занятость коек.", small))

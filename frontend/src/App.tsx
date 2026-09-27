@@ -1,17 +1,18 @@
 import { AuthGate, UserMenu } from './Auth'
+import { SignalsPage, QualityPage, ValidationPage, BriefingPanel } from './WorkspacePages'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, Building2, CalendarDays,
   Check, ChevronDown, ChevronRight, Clock3, Database, GitCompareArrows,
-  Info, LayoutDashboard, Menu, Search, Sparkles, TrendingUp, X,
+  Info, LayoutDashboard, Menu, Search, Sparkles, TrendingUp, X, ShieldCheck, ChartNoAxesCombined,
 } from 'lucide-react'
 import {
   get, post, query, type Bootstrap, type Filters, type Forecast,
   type HospitalDetail, type MetricRow, type Overview, type User, hospitalId, hospitalName,
-  type WaitOptions, type WaitResult,
+  type WaitOptions, type WaitResult, type WeeklyPoint, type ModelEvidence, type Methodology, type EvaluationPeriod,
 } from './api'
 
-type View = 'overview' | 'hospitals' | 'hospital' | 'compare' | 'forecasts' | 'data'
+type View = 'overview' | 'hospitals' | 'hospital' | 'compare' | 'forecasts' | 'signals' | 'quality' | 'validation' | 'data'
 type Mode = 'government' | 'hospital'
 type NavItem = { id: View; label: string; icon: typeof LayoutDashboard }
 
@@ -20,6 +21,9 @@ const NAV: NavItem[] = [
   { id: 'hospitals', label: 'Стационары', icon: Building2 },
   { id: 'compare', label: 'Сравнение', icon: GitCompareArrows },
   { id: 'forecasts', label: 'Прогнозы', icon: Sparkles },
+  { id: 'signals', label: 'Сигналы и отклонения', icon: Activity },
+  { id: 'quality', label: 'Качество данных', icon: ShieldCheck },
+  { id: 'validation', label: 'Проверка моделей', icon: ChartNoAxesCombined },
   { id: 'data', label: 'Как читать показатели', icon: Database },
 ]
 
@@ -114,6 +118,7 @@ function TrendChart({ rows, forecastFrom }: { rows: { date: string; value: numbe
       {forecastFrom != null && <rect x={x(Math.max(0, forecastFrom - 1))} y={top} width={width - right - x(Math.max(0, forecastFrom - 1))} height={plotHeight} fill="#e8f3f1" opacity=".8" />}
       <path d={area} fill="url(#chartArea)" opacity={forecastFrom == null ? 1 : .5} />
       <polyline points={observed.join(' ')} fill="none" stroke="#147c78" strokeWidth="3.3" strokeLinecap="round" strokeLinejoin="round" />
+      {rows.length === 1 && <circle cx={x(0)} cy={y(rows[0].value)} r="5" fill="#147c78" />}
       {projected.length > 1 && <polyline points={projected.join(' ')} fill="none" stroke="#39a9a0" strokeWidth="3.3" strokeDasharray="7 6" strokeLinecap="round" strokeLinejoin="round" />}
       {labels.map(index => <text key={index} x={x(index)} y={height - 14} textAnchor={index === 0 ? 'start' : index === rows.length - 1 ? 'end' : 'middle'} className="chart-label">{shortDay(rows[index].date)}</text>)}
       {rows.map((row, index) => <circle key={`${row.date}-${index}`} cx={x(index)} cy={y(row.value)} r="12" fill="transparent" onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} tabIndex={0} aria-label={`${day(row.date)}: ${decimal(row.value)} направлений`} />)}
@@ -124,6 +129,44 @@ function TrendChart({ rows, forecastFrom }: { rows: { date: string; value: numbe
 
 function StatusPill({ good, children }: { good: boolean; children: React.ReactNode }) {
   return <span className={`status-pill ${good ? 'status-good' : 'status-muted'}`}><span className="status-dot" />{children}</span>
+}
+
+export function WeeklyTrend({ rows }: { rows: WeeklyPoint[] }) {
+  const full = rows.filter(row => !row.partial_week)
+  const partial = rows.filter(row => row.partial_week)
+  return <>
+    {full.length ? <TrendChart rows={full.map(row => ({ date: row.week, value: row.referrals }))} />
+      : <EmptyState title="Нет полных календарных недель" text="Выберите более длинный период. Доступные неполные интервалы показаны ниже." />}
+    {partial.length > 0 && <div className="partial-weeks" role="note"><strong>Неполные недели — отдельно от графика</strong><p>Их объёмы нельзя напрямую сравнивать с полными неделями.</p>
+      {partial.map(row => <div key={row.week}><span>{day(row.period_start)} — {day(row.period_end)} <small>({row.days_in_period} из 7 дней)</small></span><b>{number(row.referrals)} направл.</b></div>)}
+    </div>}
+    <p className="panel-footnote">На графике — полные календарные недели выбранного интервала. Ноль означает отсутствие записей в выгрузке; полнота передачи данных не подтверждена.</p>
+  </>
+}
+
+function EvaluationCaption({ version, period }: { version: string | null; period: Partial<EvaluationPeriod> }) {
+  return <p className="evaluation-caption">Версия: {version || 'не указана'}<br />Проверка по регистрации: {day(period.start)} — {day(period.end)}</p>
+}
+
+export function ModelQuality({ name, unit, baseline, evidence }: { name: string; unit: string; baseline: string; evidence: ModelEvidence }) {
+  const available = evidence.status.available && evidence.metrics !== null
+  return <section className="panel quality-callout"><span className="section-kicker">{name}</span><StatusPill good={available}>{available ? 'Метрики актуальны' : 'Модель недоступна'}</StatusPill>
+    {available && evidence.metrics ? <><h2>{decimal(evidence.metrics.mae, 2)} <small>{unit}</small></h2><p>MAE — средняя абсолютная ошибка на исторической проверке. Ошибка отдельных групп может отличаться.</p><div className="quality-divider" /><p>{baseline}: <strong>{decimal(evidence.metrics.baseline_mae, 2)} {unit}</strong></p><p>RMSE: {decimal(evidence.metrics.rmse, 2)} {unit}</p><EvaluationCaption version={evidence.model_version} period={evidence.test_period} /></>
+      : <><h2>Нет актуальной оценки качества</h2><p>Артефакты отсутствуют, устарели или не прошли проверку. Обратитесь к оператору для обновления данных и модели.</p>{evidence.model_version && <p className="evaluation-caption">Сохранённая версия: {evidence.model_version}. Её метрики скрыты до подтверждения актуальности.</p>}</>}
+  </section>
+}
+
+export function OutcomeBreakdown({ stats }: { stats: Overview['stats'] }) {
+  const categories = [
+    ['Госпитализации', stats.hospitalized, 'teal'],
+    ['Отказы', stats.refused, 'coral'],
+    ['Исход не записан', stats.unresolved, 'gray'],
+    ['Некорректные / конфликтующие', stats.invalid_outcome + stats.conflicting, 'amber'],
+  ] as const
+  return <section className="panel outcome-panel"><div className="panel-heading"><div><span className="section-kicker">ИСХОДЫ И КАЧЕСТВО ДАННЫХ</span><h2>Что произошло с направлениями</h2></div></div><div className="outcome-stack">
+    {categories.map(([label, value, color]) => <div className="outcome-row" key={label}><span>{label}</span><div className="outcome-track"><i className={`outcome-fill ${color}`} style={{ width: `${value / Math.max(1, stats.referrals) * 100}%` }} /></div><strong>{number(value)}</strong></div>)}
+    </div><p className="panel-footnote">Все категории входят в {number(stats.referrals)} направлений. Некорректных исходов: {number(stats.invalid_outcome)}, конфликтующих: {number(stats.conflicting)}. Они исключены из оценки ожидания. Отсутствие исхода не означает, что человек ожидает сейчас.</p>
+  </section>
 }
 
 function HospitalChooser({ hospital, hospitals, choose }: { hospital: string; hospitals: string[]; choose: (hospital: string) => void }) {
@@ -180,11 +223,11 @@ function OverviewPage({ mode, hospital, filters, openHospital, go }: { mode: Mod
       <div className="metrics-grid">
         <MetricCard label="Направления" value={number(data.stats.referrals)} note="Зарегистрировано за период" icon={Activity} tone="accent" />
         <MetricCard label="Стационары" value={number(data.stats.hospitals)} note="С направлениями в выборке" icon={Building2} />
-        <MetricCard label="Медиана ожидания" value={decimal(data.stats.median_wait)} suffix="дня" note="По завершённым госпитализациям" icon={Clock3} />
+        <MetricCard label="Медиана ожидания" value={decimal(data.stats.median_wait)} suffix="дня" note={data.stats.median_wait == null ? `Недостаточно допустимых случаев: ${number(data.stats.eligible)} из ${data.metric_minimum}` : `По ${number(data.stats.eligible)} допустимым завершённым случаям`} icon={Clock3} />
         <MetricCard label="Госпитализации" value={number(data.stats.hospitalized)} note="С известным исходом" icon={TrendingUp} />
       </div>
       <div className="main-grid">
-        <section className="panel trend-panel"><div className="panel-heading"><div><span className="section-kicker">ДИНАМИКА</span><h2>Поступление направлений</h2><p>По неделям регистрации в выбранной выборке</p></div><span className="legend"><i /> Направления</span></div><TrendChart rows={data.trend.map(row => ({ date: row.week, value: row.referrals }))} /></section>
+        <section className="panel trend-panel"><div className="panel-heading"><div><span className="section-kicker">ДИНАМИКА</span><h2>Поступление направлений</h2><p>По полным неделям регистрации в выбранной выборке</p></div><span className="legend"><i /> Направления</span></div><WeeklyTrend rows={data.trend} /></section>
         <section className="panel attention-panel"><div className="panel-heading"><div><span className="section-kicker">ИЗМЕНЕНИЯ</span><h2>Что посмотреть</h2><p>Последние два полных периода по 7 дней</p></div></div>
           {data.attention.length ? <div className="attention-list">{data.attention.map(item => <button key={item.hospital} onClick={() => openHospital(item.hospital)} className="attention-item" title={item.hospital}>
             <span className="attention-arrow"><ArrowUpRight size={17} /></span>
@@ -194,9 +237,7 @@ function OverviewPage({ mode, hospital, filters, openHospital, go }: { mode: Mod
         </section>
       </div>
       <div className="bottom-grid">
-        <section className="panel outcome-panel"><div className="panel-heading"><div><span className="section-kicker">ИЗВЕСТНЫЕ ИСХОДЫ</span><h2>Что произошло с направлениями</h2></div></div><div className="outcome-stack">
-          {[['Госпитализации', data.stats.hospitalized, 'teal'], ['Отказы', data.stats.refused, 'coral'], ['Исход не записан', data.stats.unresolved, 'gray']].map(([label, value, color]) => <div className="outcome-row" key={String(label)}><span>{label}</span><div className="outcome-track"><i className={`outcome-fill ${color}`} style={{ width: `${Math.max(1, Number(value) / Math.max(1, data.stats.referrals) * 100)}%` }} /></div><strong>{number(Number(value))}</strong></div>)}
-        </div><p className="panel-footnote">Отсутствие исхода в выгрузке не означает, что человек ожидает сейчас.</p></section>
+        <OutcomeBreakdown stats={data.stats} />
         {mode === 'government' ? <section className="panel top-panel"><div className="panel-heading"><div><span className="section-kicker">ОРГАНИЗАЦИИ</span><h2>Стационары по объёму</h2></div><button className="text-button" onClick={() => go('hospitals')}>Все стационары <ArrowRight size={16} /></button></div>
           {top.data?.items.map(row => <button className="top-hospital" key={row.organization_or_region} onClick={() => openHospital(row.organization_or_region)}><span>{row.organization_or_region}</span><strong>{number(row.referrals)}</strong><ChevronRight size={16} /></button>)}
         </section> : <section className="panel next-panel"><span className="section-kicker">СЛЕДУЮЩИЙ ШАГ</span><h2>Посмотрите детали больницы</h2><p>Профили направлений, наблюдаемое ожидание и прогноз входящего потока находятся в одной карточке.</p><button className="primary-button" onClick={() => openHospital(hospital)}>Открыть карточку <ArrowRight size={17} /></button></section>}
@@ -223,7 +264,7 @@ function HospitalsPage({ filters, openHospital }: { filters: Filters; openHospit
   </>
 }
 
-function HospitalPage({ hospital, filters, mode, go, compare }: { hospital: string; filters: Filters; mode: Mode; go: (view: View) => void; compare: () => void }) {
+function HospitalPage({ hospital, filters, mode, go, compare, inspect }: { hospital: string; filters: Filters; mode: Mode; go: (view: View) => void; compare: () => void; inspect: (view: 'signals' | 'quality') => void }) {
   const detail = useRemote<HospitalDetail>(hospital ? `/hospital/overview${query({ ...filters, hospital })}` : null)
   const trend = useRemote<Overview>(hospital ? `/overview${query({ ...filters, hospital })}` : null)
   const stats = detail.data?.stats
@@ -232,11 +273,13 @@ function HospitalPage({ hospital, filters, mode, go, compare }: { hospital: stri
     {(detail.loading || trend.loading) && <Loading />}{detail.error && <ErrorState message={detail.error} />}{trend.error && <ErrorState message={trend.error} />}
     {detail.data && !stats && <EmptyState title="Нет записей для выбранных фильтров" text="Измените период, регион или профиль, чтобы увидеть показатели стационара." />}
     {stats && <><div className="metrics-grid"><MetricCard label="Направления" value={number(stats.referrals)} note="За выбранный период" icon={Activity} tone="accent" /><MetricCard label="Медиана ожидания" value={decimal(stats.median_wait_days)} suffix="дня" note="По завершённым случаям" icon={Clock3} /><MetricCard label="90% ожидали до" value={decimal(stats.p90_wait_days)} suffix="дня" note="Наблюдаемый P90" icon={TrendingUp} /><MetricCard label="Доля отказов" value={decimal(stats.refusal_share_pct)} suffix="%" note="Среди известных исходов" icon={Info} /></div>
-      <div className="main-grid hospital-main"><section className="panel"><div className="panel-heading"><div><span className="section-kicker">ПОСТУПЛЕНИЕ</span><h2>Направления по неделям</h2><p>История выбранного стационара</p></div></div>{trend.data && <TrendChart rows={trend.data.trend.map(row => ({ date: row.week, value: row.referrals }))} />}</section>
+      <div className="main-grid hospital-main"><section className="panel"><div className="panel-heading"><div><span className="section-kicker">ПОСТУПЛЕНИЕ</span><h2>Направления по неделям</h2><p>История выбранного стационара</p></div></div>{trend.data && <WeeklyTrend rows={trend.data.trend} />}</section>
         <section className="panel"><div className="panel-heading"><div><span className="section-kicker">ПРОФИЛИ</span><h2>Что поступает чаще</h2><p>Восемь наиболее частых профилей</p></div></div><div className="profile-list">{(detail.data?.profiles ?? []).map(profile => <div className="profile-row" key={profile.profile}><span>{profile.profile === '__MISSING__' ? 'Не указан' : profile.profile}</span><strong>{number(profile.referrals)}</strong></div>)}</div></section>
       </div>
       <section className="panel pathway-panel"><div><span className="section-kicker">ПРОГНОЗ</span><h2>Что ожидается дальше?</h2><p>Для этого стационара можно посмотреть прогноз входящих направлений на семь дней после последней даты в данных.</p></div><button className="primary-button" onClick={() => go('forecasts')}>Показать прогноз <ArrowRight size={17} /></button></section>
-      <p className="page-note">P90 — наблюдённый срок у 90% завершённых случаев, а не доверительный интервал. Фильтры выше не меняют обученную модель прогноза.</p>
+      <div className="workspace-actions"><button className="secondary-button" onClick={() => inspect('signals')}>Сигналы этой больницы <Activity size={16} /></button><button className="secondary-button" onClick={() => inspect('quality')}>Качество данных <ShieldCheck size={16} /></button></div>
+      <p className="page-note">Медиана и P90 показываются от {detail.data?.metric_minimum} допустимых завершённых случаев; доля отказов — от {detail.data?.metric_minimum} известных исходов. Прочерк означает недостаток данных. P90 — наблюдённый срок у 90% завершённых случаев, а не доверительный интервал. Фильтры выше не меняют обученную модель прогноза.</p>
+      <BriefingPanel filters={filters} hospitals={[hospital]} minimum={detail.data?.metric_minimum ?? 10} />
     </>}
   </>
 }
@@ -259,6 +302,8 @@ function ComparePage({ filters, openHospital, focus }: { filters: Filters; openH
           <div className="compare-cards">{chosen.map((item, index) => <button className="compare-card" key={item.organization_or_region} onClick={() => openHospital(item.organization_or_region)}><span>Стационар {String.fromCharCode(65 + index)} <ArrowUpRight size={15} /></span><strong>{number(item.referrals)}</strong><small>направлений · отказы {decimal(item.refusal_share_pct)}%</small></button>)}</div></> : <EmptyState title="Выберите стационары" text="Отметьте от одной до трёх организаций слева." />}
       </section></div>}
     <p className="page-note">Сравнение описывает данные, но не учитывает сложность случаев и коечную мощность. Оно не является рейтингом качества больниц.</p>
+    {data && selected.some(name => !chosen.some(row => row.organization_or_region === name)) && <div className="workspace-note"><Info size={18} /><span>Часть выбранных организаций не проходит текущие фильтры или минимум 30 направлений. В сводку войдут только видимые результаты.</span><button className="text-button" onClick={() => setSelected(chosen.map(row => row.organization_or_region))}>Снять скрытый выбор</button></div>}
+    {data && <BriefingPanel filters={filters} hospitals={chosen.map(row => row.organization_or_region)} />}
   </>
 }
 
@@ -266,9 +311,9 @@ function FlowForecast({ hospital }: { hospital: string }) {
   const { data, loading, error } = useRemote<Forecast>(hospital ? `/hospital/forecast${query({ hospital })}` : null)
   const rows = useMemo(() => data ? [...data.history.map(row => ({ date: row.date, value: row.referrals })), ...data.forecast.map(row => ({ date: row.date, value: row.predicted_referrals }))] : [], [data])
   return <>{loading && <Loading label="Рассчитываем прогноз" />}{error && <ErrorState message={error} />}{data && <>
-    <div className="forecast-summary"><div><span className="section-kicker">1–7 АПРЕЛЯ 2025</span><h2>{number(data.total)} <small>направлений за 7 дней</small></h2><p>Прогноз после последнего наблюдения {day(data.history_end)}</p></div><StatusPill good={true}>Исторический прогноз</StatusPill></div>
+    <div className="forecast-summary"><div><span className="section-kicker">{day(data.forecast[0]?.date)} — {day(data.forecast.at(-1)?.date)}</span><h2>{number(data.total)} <small>направлений за 7 дней</small></h2><p>Прогноз после последнего наблюдения {day(data.history_end)}</p></div><StatusPill good={true}>Исторический прогноз</StatusPill></div>
     <section className="panel forecast-chart"><div className="panel-heading"><div><span className="section-kicker">ПОТОК НАПРАВЛЕНИЙ</span><h2>История и следующие семь дней</h2></div><div className="chart-legend"><span><i /> Наблюдения</span><span><i /> Прогноз</span></div></div><TrendChart rows={rows} forecastFrom={data.history.length} /><div className="forecast-note"><Info size={16} /> Прогноз показывает входящие направления, а не занятость коек или текущую очередь.</div></section>
-    <div className="forecast-lower"><section className="panel"><span className="section-kicker">ПО ДНЯМ</span><h2>Детали прогноза</h2><div className="forecast-days">{data.forecast.map((row, index) => <div key={row.date}><span>{day(row.date)} <small>день {index + 1}</small></span><strong>{decimal(row.predicted_referrals)} <small>напр.</small></strong></div>)}</div></section><section className="panel quality-callout"><span className="section-kicker">ТОЧНОСТЬ МОДЕЛИ</span><h2>{decimal(data.metrics.mae, 2)} <small>направления</small></h2><p>Средняя абсолютная ошибка на историческом тесте для организации в день. На первом дне горизонта ошибка выше: {decimal(data.metrics_by_horizon[0]?.mae, 2)}.</p><div className="quality-divider" /><span>Простой прогноз: {decimal(data.metrics.baseline_mae, 2)} направления</span></section></div>
+    <div className="forecast-lower"><section className="panel"><span className="section-kicker">ПО ДНЯМ</span><h2>Детали прогноза</h2><div className="forecast-days">{data.forecast.map((row, index) => <div key={row.date}><span>{day(row.date)} <small>день {index + 1}</small></span><strong>{decimal(row.predicted_referrals)} <small>напр.</small></strong></div>)}</div></section><section className="panel quality-callout"><span className="section-kicker">ТОЧНОСТЬ МОДЕЛИ</span><StatusPill good={true}>Метрики актуальны</StatusPill><h2>{decimal(data.metrics.mae, 2)} <small>направления</small></h2><p>Средняя абсолютная ошибка на всём историческом тесте: на организацию в день. Ошибка первого дня горизонта: {decimal(data.metrics_by_horizon[0]?.mae, 2)}.</p><div className="quality-divider" /><span>Простой прогноз: {decimal(data.metrics.baseline_mae, 2)} направления</span><EvaluationCaption version={data.model_version} period={data.test_period} /></section></div>
   </>}</>
 }
 
@@ -296,6 +341,7 @@ function WaitEstimateCard({ result }: { result: WaitResult }) {
     <p>От регистрации направления до госпитализации, не оставшееся время в очереди.</p>
     <div className="result-reference">{waitBasis(result.method)}{result.support > 0 && <> · {number(result.support)} случаев</>}. {result.method !== 'catboost' && 'Это групповая медиана, не индивидуальный срок.'}</div>
     <div className="result-caveat">{result.group_quality ? <>Ошибка для этой больницы и профиля: {decimal(result.group_quality.mae, 1)} дня на {number(result.group_quality.observations)} более поздних случаях.</> : <>Общая ошибка на проверке: {decimal(result.mae, 2)} дня. Для этой группы отдельная ошибка не оценена.</>} Это не дата госпитализации.</div>
+    <div className="result-caveat">Метрики актуальны · MAE на всём тесте: {decimal(result.mae, 2)} дня. Общая медиана обучающей выборки: MAE {decimal(result.baseline_mae, 2)} дня.<EvaluationCaption version={result.model_version} period={result.test_period} /></div>
   </section>
 }
 
@@ -348,14 +394,15 @@ function ForecastsPage({ hospital, go, canChoose }: { hospital: string; go: (vie
     <div className="tab-bar" role="tablist"><button role="tab" aria-selected={tab === 'flow'} className={tab === 'flow' ? 'active' : ''} onClick={() => setTab('flow')}><Activity size={17} /> Поток направлений</button><button role="tab" aria-selected={tab === 'wait'} className={tab === 'wait' ? 'active' : ''} onClick={() => setTab('wait')}><Clock3 size={17} /> Время ожидания</button></div>
     {hospital ? tab === 'flow' ? <FlowForecast hospital={hospital} /> : <WaitForecast key={hospital} hospital={hospital} /> : <EmptyState title="Стационар не выбран" text="Откройте список стационаров и выберите организацию." />}
     <p className="page-note">Оба прогноза построены по историческим данным. Они не назначают лечение и не изменяют очередь.</p>
+    <div className="workspace-actions"><button className="secondary-button" onClick={() => go('validation')}>Проверка по периодам <ArrowRight size={16} /></button><button className="secondary-button" onClick={() => go('hospital')}>Карточка и PDF-сводка <ArrowRight size={16} /></button></div>
   </>
 }
 
 function DataPage() {
-  const { data, loading, error } = useRemote<{ waiting_mae: number | null; flow_mae: number | null }>('/methodology')
+  const { data, loading, error } = useRemote<Methodology>('/methodology')
   return <><PageHeading eyebrow="МЕТОДОЛОГИЯ" title="Как читать показатели" description="Что означают цифры в кабинете и какие выводы можно из них делать." />
     <section className="panel limitations-panel"><span className="section-kicker">ТРИ ОСНОВНЫХ ПОНЯТИЯ</span><div className="limitations-grid"><div><b>Направления</b><p>Зарегистрированные направления в выбранном периоде. Динамика не показывает свободные койки или нагрузку на персонал.</p></div><div><b>Ожидание</b><p>Полный срок от регистрации до госпитализации среди завершённых случаев. Это не оставшееся время ожидания конкретного пациента.</p></div><div><b>Прогноз потока</b><p>Оценка новых направлений на семь дней после последней даты в истории. Прогноз не описывает сегодняшнюю очередь.</p></div></div></section>
-    {loading && <Loading />}{error && <ErrorState message={error} />}{data && <div className="methodology-metrics"><MetricCard label="Общая ошибка оценки ожидания" value={decimal(data.waiting_mae, 2)} suffix="дня" note="На исторической проверке; ошибка отдельных групп может отличаться" icon={Clock3} /><MetricCard label="Общая ошибка прогноза потока" value={decimal(data.flow_mae, 2)} suffix="напр." note="На организацию в день в историческом тесте" icon={Activity} /></div>}
+    {loading && <Loading />}{error && <ErrorState message={error} />}{data && <div className="methodology-metrics"><ModelQuality name="Оценка ожидания" unit="дня" baseline="Общая медиана обучающей выборки" evidence={data.waiting} /><ModelQuality name="Прогноз потока" unit="напр. / организацию в день" baseline="Среднее предыдущих 7 дней" evidence={data.flow} /></div>}
     <p className="page-note">Данные относятся к январю–марту 2025 года. Сравнение не учитывает сложность случаев и мощность больниц. Модель помогает анализировать историю; решения принимает специалист.</p>
   </>
 }
@@ -372,6 +419,7 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
   const mode: Mode = user.role === 'hospital_analyst' ? 'hospital' : 'government'
   const [route, setRoute] = useState(currentRoute)
   const [hospital, setHospital] = useState('')
+  const [analysisHospital, setAnalysisHospital] = useState('')
   const [filters, setFilters] = useState<Filters>({ start: '', end: '', region: '', profile: '' })
   const [menuOpen, setMenuOpen] = useState(false)
   const [compareFocus, setCompareFocus] = useState('')
@@ -395,12 +443,15 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
     setMenuOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  const openHospital = (name: string) => { setHospital(name); navigate('hospital', name) }
+  const openHospital = (name: string) => { setHospital(name); setAnalysisHospital(name); navigate('hospital', name) }
+  const openForecast = (name: string) => { setHospital(name); setAnalysisHospital(name); navigate('forecasts') }
+  const inspectHospital = (view: 'signals' | 'quality') => { setAnalysisHospital(hospital); navigate(view) }
   const openComparison = () => { setCompareFocus(hospital); navigate('compare') }
   const allowed = !(mode === 'hospital' && ['hospitals', 'compare'].includes(route.view)) && !(route.hospital && boot.data && !hospitalName(route.hospital))
   const activeView = route.view
   const title = NAV.find(item => item.id === activeView)?.label ?? 'Стационар'
-  const visibleNav: NavItem[] = mode === 'hospital' ? [NAV[0], { id: 'hospital', label: 'Моя больница', icon: Building2 }, NAV[3], NAV[4]] : NAV
+  const visibleNav: NavItem[] = mode === 'hospital' ? NAV.flatMap(item => item.id === 'hospitals' ? [{ id: 'hospital' as View, label: 'Моя больница', icon: Building2 }] : item.id === 'compare' ? [] : [item]) : NAV
+  const scopedHospital = mode === 'hospital' ? hospital : analysisHospital
   return <div className="app-shell">
     <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
       <div className="brand"><div className="brand-mark"><Activity size={24} strokeWidth={2.3} /></div><div><strong>MedFlow<span>AI</span></strong><small>Госпитальная аналитика</small></div></div>
@@ -414,13 +465,17 @@ function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }
         {mode === 'hospital' && <div className="hospital-context"><Building2 size={18} /><div className="assigned-hospital"><span className="context-label">ВАША ОРГАНИЗАЦИЯ</span><strong>{user.hospital_name}</strong></div></div>}
         {mode === 'government' && activeView === 'forecasts' && <div className="hospital-context"><span className="context-label">Стационар</span><HospitalChooser hospital={hospital} hospitals={boot.data.hospitals} choose={setHospital} /></div>}
         {!allowed ? <EmptyState title="Нет доступа к этой странице" text="Выберите доступный раздел в меню. Данные других организаций закрыты." /> : <>
+        {mode === 'government' && ['signals', 'quality'].includes(activeView) && <div className="hospital-context"><span className="context-label">Область анализа</span><HospitalChooser hospital={analysisHospital || 'Все стационары'} hospitals={['Все стационары', ...boot.data.hospitals]} choose={name => setAnalysisHospital(name === 'Все стационары' ? '' : name)} /></div>}
         {activeView === 'overview' && <Onboarding user={user} go={navigate} />}
-        {['overview', 'hospitals', 'hospital', 'compare'].includes(activeView) && <FilterBar filters={filters} setFilters={setFilters} bootstrap={boot.data} />}
+        {['overview', 'hospitals', 'hospital', 'compare', 'signals', 'quality'].includes(activeView) && <FilterBar filters={filters} setFilters={setFilters} bootstrap={boot.data} />}
         {activeView === 'overview' && <OverviewPage mode={mode} hospital={hospital} filters={filters} openHospital={openHospital} go={navigate} />}
         {activeView === 'hospitals' && <HospitalsPage filters={filters} openHospital={openHospital} />}
-        {activeView === 'hospital' && <HospitalPage hospital={hospital} filters={filters} mode={mode} go={navigate} compare={openComparison} />}
+        {activeView === 'hospital' && <HospitalPage hospital={hospital} filters={filters} mode={mode} go={navigate} compare={openComparison} inspect={inspectHospital} />}
         {activeView === 'compare' && <ComparePage filters={filters} openHospital={openHospital} focus={compareFocus} />}
         {activeView === 'forecasts' && <ForecastsPage hospital={hospital} go={navigate} canChoose={mode === 'government'} />}
+        {activeView === 'signals' && <SignalsPage key={JSON.stringify([filters, scopedHospital])} filters={filters} hospital={scopedHospital} openHospital={openHospital} forecast={openForecast} quality={() => navigate('quality')} />}
+        {activeView === 'quality' && <QualityPage filters={filters} hospital={scopedHospital} />}
+        {activeView === 'validation' && <ValidationPage hospitalRole={mode === 'hospital'} />}
         {activeView === 'data' && <DataPage />}
         </>}
       </main>}

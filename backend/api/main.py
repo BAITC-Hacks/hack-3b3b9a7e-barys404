@@ -1,13 +1,16 @@
 """Local, aggregate-only API for the MedFlow web dashboard."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
+import hashlib
+import hmac
+import json
 from functools import lru_cache
 import math
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Depends, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ConfigDict
 import numpy as np
@@ -15,6 +18,7 @@ import pandas as pd
 import psycopg
 
 from backend.analytics import dashboard_data as db
+from backend.analytics.monitoring import signal_feed
 from backend.api.auth import router as auth_router, require, resolve_hospital, check_csrf, PRODUCTION
 from backend.auth import store
 from backend.auth.store import Principal
@@ -31,6 +35,7 @@ from ml.load_forecast import (
 from ml.predict import load_metadata, model_status
 from ml.feature_engineering import make_features
 from ml.waiting_estimator import calibrated_predictions
+from ml.validation import validation_status
 from backend.core.utils import read_json
 
 
@@ -155,13 +160,7 @@ def overview(start: date | None = None, end: date | None = None,
     ready()
     filters = DataScope(hospital).apply(filters_from(start, end, region, profile))
     stats = db.overview(filters)
-    where, params = db.cohort_where(filters)
-    trend = db.aggregate_query(ANALYTICAL_PATH, f"""
-        SELECT CAST(date_trunc('week', registration_dt) AS DATE) AS week,
-               count(*) AS referrals
-        FROM read_parquet(?) WHERE {where}
-        GROUP BY 1 ORDER BY 1
-    """, params)
+    trend = db.weekly_trend(filters, path=ANALYTICAL_PATH)
     period, changes = db.recent_activity(filters)
     if hospital and not changes.empty:
         changes = changes.loc[changes.hospital.eq(hospital)]
@@ -169,7 +168,7 @@ def overview(start: date | None = None, end: date | None = None,
         changes = changes.loc[
             (changes.previous >= 10) & (changes.current >= 10) & (changes.change_pct > 0)
         ].sort_values("change_pct", ascending=False).head(4)
-    return clean({"stats": stats, "trend": trend, "attention_period": period,
+    return clean({"stats": stats, "trend": trend, "metric_minimum": db.MIN_METRIC_GROUP_SIZE, "attention_period": period,
                   "attention": changes})
 
 
@@ -198,7 +197,8 @@ def hospital_overview(hospital_id: str, start: date | None = None, end: date | N
     comparison = db.hospital_directory(filters)
     row = comparison.iloc[0].to_dict() if not comparison.empty else None
     profiles = db.hospital_profiles(filters)
-    return clean({"hospital": hospital, "stats": row, "profiles": profiles})
+    return clean({"hospital": hospital, "stats": row, "profiles": profiles,
+                  "metric_minimum": db.MIN_METRIC_GROUP_SIZE})
 
 
 @app.get("/api/hospital/forecast")
@@ -220,6 +220,8 @@ def hospital_forecast(hospital_id: str, user: Principal = Depends(require("forec
                   "total": float(future.predicted_referrals.sum()),
                   "history_end": metadata.get("history_end", "")[:10],
                   "metrics": metadata.get("metrics", {}),
+                  "model_version": str(metadata["model_version"]),
+                  "test_period": metadata.get("test_period", {}),
                   "metrics_by_horizon": metadata.get("metrics_by_horizon", [])})
 
 
@@ -252,10 +254,12 @@ def models(user: Principal = Depends(require("system:read"))):
     wait_meta = read_json(METADATA_PATH) if METADATA_PATH.exists() else {}
     flow_meta = read_json(FORECAST_METADATA_PATH) if FORECAST_METADATA_PATH.exists() else {}
     return clean({
-        "waiting": {"status": waiting, "metrics": wait_meta.get("metrics", {}),
+        "waiting": {"status": waiting, "model_version": str(wait_meta["model_version"]) if wait_meta.get("model_version") is not None else None,
+                    "metrics": wait_meta.get("metrics", {}) if waiting["available"] else None,
                     "test_period": wait_meta.get("test_period", {}),
                     "rows": wait_meta.get("rows", {})},
-        "flow": {"status": flow, "metrics": flow_meta.get("metrics", {}),
+        "flow": {"status": flow, "model_version": str(flow_meta["model_version"]) if flow_meta.get("model_version") is not None else None,
+                 "metrics": flow_meta.get("metrics", {}) if flow["available"] else None,
                  "history_end": flow_meta.get("history_end", "")[:10],
                  "test_period": flow_meta.get("test_period", {}),
                  "metrics_by_horizon": flow_meta.get("metrics_by_horizon", [])},
@@ -266,13 +270,43 @@ def models(user: Principal = Depends(require("system:read"))):
     })
 
 
+def model_evidence(path, status_reader):
+    """Share only versioned evaluation evidence; suppress stale/malformed metrics."""
+    metadata = {}
+    status = {"available": False, "stale": True, "reason": "Артефакты модели недоступны или повреждены."}
+    try:
+        metadata = read_json(path)
+        if not isinstance(metadata, dict):
+            metadata = {}
+            raise ValueError("Invalid model metadata")
+        status = status_reader()
+        metrics = metadata.get("metrics", {})
+        period = metadata.get("test_period", {})
+        if not isinstance(period, dict):
+            raise ValueError("Invalid test period")
+        first, last = (date.fromisoformat(str(period[key])[:10]) for key in ("start", "end"))
+        if first > last or not metadata.get("model_version"):
+            raise ValueError("Missing model version or invalid test period")
+        for key in ("mae", "baseline_mae", "rmse"):
+            value = metrics[key]
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+                raise ValueError("Invalid evaluation metric")
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        status = {"available": False, "stale": True, "reason": "Актуальные метрики модели недоступны. Обновите артефакты."}
+    period = metadata.get("test_period", {})
+    return {"status": status, "model_version": str(metadata["model_version"]) if metadata.get("model_version") is not None else None,
+            "test_period": {key: str(period.get(key, ""))[:10] for key in ("start", "end")} if isinstance(period, dict) else {},
+            "metrics": {key: metrics[key] for key in ("mae", "baseline_mae", "rmse")} if status["available"] else None}
+
+
 @app.get("/api/methodology")
 def methodology(user: Principal = Depends(require("methodology:read"))):
-    # Only common, intentionally shared model quality; no cohort sizes or source inventory.
-    wait_meta = read_json(METADATA_PATH) if METADATA_PATH.exists() else {}
-    flow_meta = read_json(FORECAST_METADATA_PATH) if FORECAST_METADATA_PATH.exists() else {}
-    return clean({"waiting_mae": wait_meta.get("metrics", {}).get("mae"),
-                  "flow_mae": flow_meta.get("metrics", {}).get("mae")})
+    # Common quality only; no hospital cohort sizes, learned medians or source inventory.
+    waiting = model_evidence(METADATA_PATH, model_status)
+    flow = model_evidence(FORECAST_METADATA_PATH, forecast_status)
+    return clean({"waiting": waiting, "flow": flow,
+                  "waiting_mae": waiting["metrics"]["mae"] if waiting["metrics"] else None,
+                  "flow_mae": flow["metrics"]["mae"] if flow["metrics"] else None})
 
 
 @app.get("/api/wait-options")
@@ -360,9 +394,151 @@ def predict_wait(payload: WaitingRequest, user: Principal = Depends(require("wai
                   "method": method, "support": scoped_support,
                   "training_cutoff": result.get("training_cutoff", ""),
                   "group_quality": group_quality,
+                  "model_version": metadata.get("model_version"),
+                  "test_period": metadata.get("test_period", {}),
+                  "baseline_mae": metadata.get("metrics", {}).get("baseline_mae"),
                   "contributions": result["contributions"][:8],
                   "mae": metadata.get("metrics", {}).get("mae"),
                   "tested_until": metadata.get("test_period", {}).get("end", "")[:10]})
+
+
+@app.get('/api/signals')
+def signals(start: date | None = None, end: date | None = None,
+            region: str | None = None, profile: str | None = None, hospital_id: str | None = None,
+            kind: Literal['all', 'referrals', 'refusals', 'open_growth'] = 'all',
+            limit: int = Query(30, ge=1, le=100), offset: int = Query(0, ge=0),
+            user: Principal = Depends(require('signals:read'))):
+    hospital = resolve_hospital(user, hospital_id)
+    ready()
+    filters = DataScope(hospital).apply(filters_from(start, end, region, profile))
+    return clean(signal_feed(filters, ANALYTICAL_PATH, PROCESSED_DIR / 'hospital_day.parquet', kind=kind, limit=limit, offset=offset))
+
+
+@app.get('/api/quality')
+def quality(start: date | None = None, end: date | None = None,
+            region: str | None = None, profile: str | None = None, hospital_id: str | None = None,
+            user: Principal = Depends(require('quality:read'))):
+    hospital = resolve_hospital(user, hospital_id)
+    report = ready()
+    filters = DataScope(hospital).apply(filters_from(start, end, region, profile))
+    result = {'stats': db.overview(filters), 'hospital': hospital, 'prepared_at': report.get('created_at'),
+              'sources': None, 'preparation': None}
+    if user.role == 'government_analyst':
+        result['sources'] = [{'category': key, 'file_count': item.get('file_count'),
+                              'expected_parts': item.get('expected_parts'), 'complete': item.get('complete'),
+                              'rows': report.get('datasets', {}).get(key, {}).get('rows')}
+                             for key, item in report.get('coverage', {}).items()]
+        result['preparation'] = {key: report.get('cleaning', {}).get(key) for key in (
+            'waiting_exact_duplicates_removed', 'referrals_exact_duplicates_removed', 'referrals_conflicting_key_rows_excluded')}
+        result['preparation'].update({key: report.get('join', {}).get(key) for key in (
+            'unambiguous_matched_rows', 'registration_date_mismatches', 'referral_conflicting_keys')})
+    return clean(result)
+
+
+ERROR_METRICS = ('mae', 'baseline_mae', 'rmse', 'improvement_pct', 'seasonal_baseline_mae', 'p90_absolute_error')
+
+
+@app.get('/api/validation')
+def validation(group: Literal['hospital_mo', 'region_origin_code', 'bed_profile'] = 'hospital_mo',
+               search: str = '', offset: int = Query(0, ge=0), limit: int = Query(30, ge=1, le=100),
+               user: Principal = Depends(require('validation:read'))):
+    hospital = resolve_hospital(user, None)
+    state = validation_status()
+    if not state['available']:
+        return {'available': False, 'reason': 'Актуальная проверка по периодам недоступна. Обратитесь к оператору.'}
+    report = state['report']
+    output = {'available': True, 'created_at': report.get('created_at'), 'hospital': hospital,
+              'waiting_selection_overlap': bool(report.get('estimator_selection_overlap')),
+              'minimum_group_size': report['waiting'].get('minimum_group_size', 30)}
+    for name in ('waiting', 'forecast'):
+        values = report[name]
+        output[name] = {'pooled': {key: values['pooled'].get(key) for key in ERROR_METRICS},
+                        'folds': [{key: row.get(key) for key in ('test_start', 'test_end', *ERROR_METRICS)} for row in values['folds']]}
+    output['forecast']['by_horizon'] = [{key: row.get(key) for key in ('horizon', *ERROR_METRICS)} for row in report['forecast']['by_horizon']]
+    dimension = 'hospital_mo' if hospital else group
+    groups = report['waiting']['groups'].get(dimension, [])
+    if hospital:
+        groups = [row for row in groups if row[dimension] == hospital]
+    elif search:
+        groups = [row for row in groups if search[:100].casefold() in str(row[dimension]).casefold()]
+    output['groups'] = {'dimension': dimension, 'total': len(groups), 'items': [
+        {'name': row[dimension], **{key: row.get(key) for key in ('observations', *ERROR_METRICS)}}
+        for row in groups[offset:offset + limit]]}
+    return clean(output)
+
+
+REVIEW_QUESTIONS = {
+    'waiting': 'Почему различаются наблюдаемые сроки ожидания?',
+    'flow': 'Как изменились поток направлений и доступная мощность?',
+    'refusals': 'Каковы причины отказов и полнота регистрации?',
+}
+
+
+class BriefingRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    hospital_ids: list[str] = Field(min_length=1, max_length=3)
+    start: date
+    end: date
+    region: str | None = Field(default=None, max_length=300)
+    profile: str | None = Field(default=None, max_length=300)
+    minimum: int = Field(default=30, ge=10, le=1000)
+    question: Literal['waiting', 'flow', 'refusals'] = 'flow'
+
+
+class ReviewedBriefingRequest(BriefingRequest):
+    reviewed: bool = Field(strict=True)
+    review_token: str = Field(pattern=r'^[0-9a-f]{64}$')
+
+
+def briefing_snapshot(payload: BriefingRequest, user: Principal):
+    # Resolve every object before any data reads; the server owns all figures.
+    names = [resolve_hospital(user, identifier, required=True) for identifier in payload.hospital_ids]
+    if len(set(names)) != len(names):
+        raise HTTPException(422, 'Выберите разные стационары.')
+    report = ready()
+    filters = filters_from(payload.start, payload.end, payload.region or None, payload.profile or None)
+    rows = []
+    for name in names:
+        table = db.compare_groups({**filters, 'hospital_mo': name}, minimum=payload.minimum)
+        if table.empty:
+            raise HTTPException(422, 'В выбранном периоде не для всех стационаров достаточно направлений. Уточните выбор.')
+        rows.append(table.iloc[0].to_dict())
+    evidence = {'waiting': model_evidence(METADATA_PATH, model_status),
+                'forecast': model_evidence(FORECAST_METADATA_PATH, forecast_status)}
+    metrics = {key: {**item['metrics'], 'model_version': item['model_version'],
+                     'period': f"{item['test_period']['start']} - {item['test_period']['end']}"}
+               for key, item in evidence.items() if item['metrics']}
+    snapshot = clean({'source_fingerprint': report.get('source_fingerprint'),
+                      'filters': filters, 'group_dimension': 'hospital_mo', 'minimum_group_size': payload.minimum,
+                      'review_question': REVIEW_QUESTIONS[payload.question], 'aggregates': rows})
+    # A content checksum binds confirmation to server-computed data, filters and
+    # model evidence. It is not a signature or proof that a human read the report.
+    context = {'snapshot': snapshot, 'evidence': evidence, 'user': user.id,
+               'revisions': [db.file_version(path) for path in (ANALYTICAL_PATH, QUALITY_PATH, METADATA_PATH, FORECAST_METADATA_PATH)]}
+    token = hashlib.sha256(json.dumps(context, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    return snapshot, clean(metrics), token
+
+
+@app.post('/api/briefings/preview')
+def briefing_preview(payload: BriefingRequest, user: Principal = Depends(require('briefing:export'))):
+    snapshot, metrics, token = briefing_snapshot(payload, user)
+    return {'snapshot': snapshot, 'metrics': metrics, 'review_token': token}
+
+
+@app.post('/api/briefings/pdf')
+def briefing_pdf(payload: ReviewedBriefingRequest, user: Principal = Depends(require('briefing:export'))):
+    snapshot, metrics, token = briefing_snapshot(payload, user)
+    if not payload.reviewed:
+        raise HTTPException(422, 'Сначала проверьте сводку и подтвердите просмотр.')
+    if not hmac.compare_digest(token, payload.review_token):
+        raise HTTPException(409, 'Контекст сводки изменился. Загрузите новый просмотр и подтвердите его.')
+    from backend.analytics.briefing import build_briefing_pdf
+    try:
+        pdf = build_briefing_pdf({**snapshot, 'created_at': datetime.now(timezone.utc).isoformat(),
+                                  'review_status': 'reviewed_for_discussion'}, metrics)
+    except ValueError as error:
+        raise HTTPException(422, 'Сводка не помещается на страницу. Уменьшите число стационаров.') from error
+    return Response(pdf, media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename="medflow_briefing.pdf"'})
 
 
 # A built frontend is served by the same local process for an offline demo.

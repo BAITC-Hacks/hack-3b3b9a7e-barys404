@@ -36,7 +36,8 @@ def test_filters_are_parameterized_and_wait_denominator_excludes_unresolved(dash
     assert values["unresolved"] == 1
     assert values["hospitalized"] == 1
     assert values["eligible"] == 1
-    assert values["mean_wait"] == 10.0
+    assert pd.isna(values["mean_wait"])
+    assert pd.isna(values["median_wait"])
     assert overview({"hospital_mo": "' OR 1=1 --"}, dashboard_cohort)["referrals"] == 0
 
 
@@ -45,7 +46,8 @@ def test_events_use_actual_outcome_dates_and_outputs_have_no_identifiers(dashboa
     admissions = events.loc[events["event"].eq("Hospitalizations")]
     assert admissions["date"].dt.date.tolist() == [date(2025, 1, 12)]
     assert admissions["records"].sum() == 1
-    assert waits["records"].sum() == 1
+    assert waits.empty  # A one-case wait histogram must not reveal its waiting day.
+    assert hospitals["mean_wait_days"].isna().all()
     for output in (events, waits, hospitals):
         assert "hospitalization_code" not in output.columns
         assert not any(output.astype(str).apply(lambda column: column.str.contains("test-only-id")).any())

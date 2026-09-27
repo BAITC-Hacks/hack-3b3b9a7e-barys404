@@ -20,7 +20,8 @@ from backend.core.config import ROOT
 HASHER = PasswordHasher()
 # Equal-cost password verification when the login does not exist.
 DUMMY_HASH = HASHER.hash(secrets.token_urlsafe(32))
-ANALYST = frozenset({"overview:read", "hospital:read", "forecast:read", "waiting:predict", "methodology:read"})
+ANALYST = frozenset({"overview:read", "hospital:read", "forecast:read", "waiting:predict", "methodology:read",
+                     "signals:read", "quality:read", "validation:read", "briefing:export"})
 PERMISSIONS = {
     "government_analyst": ANALYST | {"hospital:list", "comparison:read"},
     "hospital_analyst": ANALYST,
