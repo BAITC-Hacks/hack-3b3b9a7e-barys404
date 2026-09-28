@@ -1,83 +1,65 @@
-# Структура фронтенда MedFlow AI
+# MedFlow frontend
 
-React + TypeScript + Vite. Точка входа — `src/main.tsx`, композиция приложения —
-`src/App.tsx`. Серверная авторизация и RBAC остаются источником прав доступа;
-видимость меню на клиенте не заменяет проверку API.
+React + TypeScript + Vite. Entry: `src/main.tsx`. The FastAPI server serves `dist/`
+on port 8000. Development: `npm ci`, `npm run dev` (API proxy to port 8000).
 
-Здесь нет обучения моделей, чтения CSV или SQL. Каталог `public/` содержит
-исходные публичные ресурсы; `dist/` и `node_modules/` генерируются и исключены из Git.
+## FSD boundaries
 
-Для запуска разработки из `frontend/` выполните `npm ci`, затем `npm run dev`.
-Запросы `/api` проксируются в FastAPI на порт 8000. Готовую сборку отдаёт
-`backend/api/main.py`; отдельный Node-сервер для демо не нужен.
-См. [сценарии интерфейса](../docs/WEB_INTERFACE.md).
+Imports go down: `app → pages → widgets → features → entities → shared`.
+Separate slices on the same layer do not import each other. A slice exposes its
+public API through `index.ts`; consumers must not reach into its internal files.
+`npm run check:architecture` enforces these rules and runs as part of the build.
 
-## Где искать код
+| Layer    | Responsibility                                                               |
+| -------- | ---------------------------------------------------------------------------- |
+| app      | Auth orchestration, routes, workspace state, global CSS cascade              |
+| pages    | Page-specific requests/state and composition                                 |
+| widgets  | Overview blocks, comparison, forecasts, workspace/public shell, admin panels |
+| features | Referral filters, hospital selection, reviewed PDF export                    |
+| entities | Hospital ID directory, region names, user presentation                       |
+| shared   | Generic HTTP/CSRF/cancellation, wire DTOs, hooks, formatting, UI primitives  |
 
-| Каталог                                           | Ответственность                                                                              |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `src/app`                                         | Маршруты по hash, меню, состояние фильтров и выбранной организации, сборка рабочего кабинета |
-| `src/auth`                                        | Проверка сессии, вход в кабинет, синхронизация аккаунта между вкладками                      |
-| `src/pages`                                       | Страницы: загрузка данных, состояние страницы и композиция секций                            |
-| `src/components/layout`                           | Боковое меню, шапки, логотип, меню аккаунта, подсказка первого входа                         |
-| `src/components/ui`                               | Общие заголовки, карточки показателей, состояния загрузки/ошибок                             |
-| `src/components/charts`                           | График истории направлений и прогноза                                                        |
-| `src/components/overview`, `compare`, `hospitals` | Секции обзора, выбор и сравнение организаций, строки и поиск стационаров                     |
-| `src/components/forecasts`                        | Прогноз потока, форма ожидания, результат оценки и настройки полей                           |
-| `src/components/briefing`                         | Подготовка, проверка и скачивание PDF-сводки                                                 |
-| `src/components/welcome`                          | Секции публичной главной страницы                                                            |
-| `src/hooks`                                       | Загрузка данных с отменой запроса при смене параметров или размонтировании                   |
-| `src/api/types.ts`                                | Типы запросов и ответов API                                                                  |
-| `src/api/client.ts`                               | HTTP, CSRF, отмена запросов, очистка приватных данных, идентификаторы больниц                |
-| `src/lib`                                         | Форматирование чисел/дат, названия ролей, сообщения ошибок                                   |
-| `src/styles`                                      | Общие, тематические и адаптивные стили                                                       |
+No ML inference, SQL or authorization rules in React. API contracts are in
+`shared/api/types.ts` (wire DTOs, not duplicated domain models). Name-to-ID mapping
+belongs to `entities/hospital`; the generic HTTP client does not know about hospitals.
+Its lifecycle hooks clear the private directory when the account changes. The waiting
+form sends a hospital ID explicitly; no special payload rewriting in HTTP.
 
-Импорты указывают на конкретный модуль. Компоненты не импортируют страницы или
-`App.tsx`. Маршруты и типы навигации находятся в `app/navigation.ts`, чтобы не
-создавать циклических зависимостей с рабочим кабинетом.
+Pages own their composition and state. Shared requests cancel stale responses;
+forms keep their existing cancellation and version guards. Backend RBAC remains the
+source of truth even when buttons or sections are hidden.
 
-Страница владеет состоянием и передаёт данные и обработчики секциям через props.
-Форма прогноза и форма PDF владеют своими запросами и отменяют устаревшие ответы.
-Не создавайте отдельный HTTP-клиент внутри страниц: общий `api/client.ts`
-обеспечивает CSRF и не позволяет запросам предыдущего аккаунта обновить новый сеанс.
+## Design and styles
 
-## Стили
+The redesign covers the workspace shell, overview, public landing, sign-in and
+administration. They share light clinical surfaces, restrained teal and flat layouts.
+Other screens keep their interaction patterns and inherit common typography.
 
-`main.tsx` подключает только `styles/index.css`. В нём явно задан порядок всех
-импортов. При разделении исходного файла сохранены **все правила и их порядок**,
-включая адаптивные переопределения и последнее исправление страницы сравнения.
+`app/styles/index.css` defines the cascade; do not reorder imports casually. Theme
+tokens are in `theme.css`. Overview-specific rules are scoped to `overview-layout`
+and `overview-metrics`, without changing forecast or hospital metric layouts.
+The 21st direction and constraints are recorded in `.21st/` (no private data).
 
-- `theme.css`, `base.css` — базовая тема и общие HTML-правила.
-- `layout.css`, `account.css` — рабочая область и элементы аккаунта.
-- `controls.css`, `buttons.css`, `headings.css`, `panels.css`, `metrics.css`,
-  `feedback.css` — общий интерфейс.
-- `overview.css`, `directory.css`, `hospital.css`, `compare.css`, `forecast.css`,
-  `wait-forecast.css`, `methodology.css`, `evidence.css`, `welcome.css`, `auth.css` —
-  тематические блоки.
-- `filters.css`, `hospital-chooser.css`, `charts.css` — общие предметные компоненты.
-- `responsive-workspace.css`, `responsive-public.css`, `workspace-typography.css`,
-  `readability.css` — существующие адаптивные и типографические переопределения.
+Short entrance animations live in `shared/lib/useEntrance.ts` and use the native
+Web Animations API. Route/tab fades never remount forms. Motion is cancelled on
+unmount and skipped for reduced-motion users; press feedback lives in `motion.css`.
+No animation library, endless effects or number count-ups are used.
 
-Не переставляйте импорты и не переносите позднее переопределение в начало каскада
-без проверки в браузере. В рамках этого рефакторинга CSS-классы и медиазапросы
-сохранены; переход на CSS Modules или изменение дизайна не выполнялись.
-
-## Проверки и форматирование
-
-Из каталога `frontend`:
+## Checks
 
 ```sh
 npm run build
 npm test
 npm run format:check
-npm run format
 ```
 
-`build` проверяет TypeScript и собирает приложение. Тесты импортируют конкретные
-компоненты и проверяют вывод данных, ограничения сводок, CSRF и очистку запросов
-при выходе из аккаунта. Они не заменяют проверку вёрстки и взаимодействий в браузере.
+Build checks FSD boundaries, TypeScript and production bundling. Existing tests
+cover manual search, region filter values, reviewed PDF export, CSRF and cancellation.
+Use a focused browser check for layout and interactions; no model retraining needed.
 
-Prettier форматирует JSX, TypeScript и CSS, чтобы новые компоненты не превращались
-в длинные строки. Новую страницу размещайте в `pages`, самостоятельную секцию —
-в тематическом каталоге `components`; простую обёртку без собственной
-ответственности выделять в отдельный компонент не требуется.
+## Frontend updates
+
+Production builds expose their asset names through `/api/frontend-version`. Open
+tabs check on return/navigation and once per minute, and offer a manual reload
+when code or styles have changed. HTML is served with `Cache-Control: no-store`.
+No form is automatically discarded during an update.

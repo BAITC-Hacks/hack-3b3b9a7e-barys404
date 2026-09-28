@@ -1,0 +1,282 @@
+/* Readable type at native zoom, including compact and mobile layouts. */
+
+:root {
+  --font-body: 1rem;
+  --font-small: 0.875rem;
+  line-height: 1.5;
+}
+
+.sidebar {
+  overflow-y: auto;
+}
+
+.brand {
+  padding-inline: 8px;
+}
+
+.brand-mark {
+  flex-shrink: 0;
+}
+
+.brand > div:last-child {
+  min-width: 0;
+}
+
+.brand small,
+.public-brand small {
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.sidebar-version {
+  letter-spacing: 0.08em;
+}
+
+.nav-link {
+  font-size: var(--font-body);
+  line-height: 1.4;
+}
+
+.page-heading p,
+.panel-heading p,
+.panel > p,
+.next-panel p,
+.forecast-summary p,
+.data-intro p,
+.quality-callout p,
+.wait-form-panel > p,
+.result-placeholder p,
+.limitations-grid p,
+.empty-state p,
+.boot-error p,
+.onboarding p {
+  font-size: var(--font-body);
+  line-height: 1.7;
+}
+
+.panel h2,
+.result-placeholder h2 {
+  font-size: 1.25rem;
+}
+
+.primary-button,
+.secondary-button,
+.login-form-card .primary-button {
+  font-size: var(--font-body);
+  line-height: 1.4;
+  min-height: 44px;
+}
+
+.wait-form input,
+.wait-form select,
+.search-field input,
+.chooser-search input,
+.login-form-card input {
+  font-size: var(--font-body);
+}
+
+.search-field,
+.chooser-search input,
+.icon-button {
+  min-height: 44px;
+}
+
+.metric-note,
+.metric-top,
+.attention-meta,
+.panel-footnote,
+.page-note {
+  line-height: 1.5;
+}
+
+.attention-text strong,
+.hospital-cell,
+.top-hospital {
+  font-size: var(--font-body);
+}
+
+.panel-footnote {
+  font-size: var(--font-small) !important;
+}
+
+.top-hospital span {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.outcome-row {
+  grid-template-columns: 145px minmax(0, 1fr) 76px;
+}
+
+.table-head {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.table-head,
+.hospital-row {
+  grid-template-columns: minmax(0, 1fr) 120px 115px 105px 17px;
+}
+
+.directory-pagination {
+  flex-wrap: wrap;
+}
+
+.directory-toolbar {
+  flex-wrap: wrap;
+}
+
+.visual-top,
+.visual-chart > div {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.visual-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.visual-metrics > span {
+  min-width: 0;
+}
+
+.public-header {
+  flex-wrap: wrap;
+}
+
+.welcome-access,
+.visual-bottom,
+.login-security {
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.user-menu small {
+  line-height: 1.3;
+}
+
+@media (max-width: 1080px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sidebar .brand {
+    padding-inline: 0;
+  }
+  .sidebar-version {
+    letter-spacing: 0;
+  }
+  .sidebar .brand strong {
+    font-size: 18px;
+  }
+  .sidebar .brand small {
+    font-size: var(--font-small);
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    min-height: 74px;
+    height: auto;
+    padding-block: 10px;
+  }
+  .topbar-actions {
+    min-width: 0;
+  }
+  .user-menu small {
+    max-width: 130px;
+  }
+  .heading-actions {
+    flex-wrap: wrap;
+  }
+  .data-intro-numbers {
+    flex-wrap: wrap;
+  }
+  .chart-legend {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 520px) {
+  .public-header .secondary-button {
+    font-size: var(--font-small);
+  }
+  .outcome-row {
+    grid-template-columns: 110px minmax(0, 1fr) 65px;
+  }
+  .table-head,
+  .hospital-row {
+    grid-template-columns: minmax(0, 1fr) 80px 65px 16px;
+  }
+  .hospital-avatar {
+    display: none;
+  }
+  .hospital-cell {
+    font-size: var(--font-small);
+  }
+  .name-cell > span:last-child {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+  .tab-bar button {
+    flex-wrap: wrap;
+  }
+  .forecast-days > div {
+    flex-wrap: wrap;
+  }
+  .forecast-days small {
+    display: block;
+    margin-left: 0;
+  }
+  .user-menu {
+    gap: 6px;
+  }
+  .user-menu small {
+    max-width: 105px;
+  }
+  .breadcrumbs {
+    min-width: 0;
+    white-space: normal;
+  }
+  .metric-top {
+    align-items: flex-start;
+  }
+  .metric-card {
+    padding: 15px 12px;
+  }
+}
+
+small {
+  font-size: var(--font-small);
+}
+
+@media (max-width: 520px) {
+  .hospital-table-head {
+    display: none;
+  }
+  .hospital-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 16px;
+    gap: 12px;
+    padding: 18px;
+  }
+  .hospital-row .name-cell {
+    grid-column: 1/-1;
+    font-size: var(--font-body);
+  }
+  .hospital-row .numeric-cell::before {
+    content: attr(data-label);
+    display: block;
+    font-size: var(--font-small);
+    font-weight: 500;
+    color: #607970;
+    margin-bottom: 4px;
+  }
+  .hospital-row .row-chevron {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}

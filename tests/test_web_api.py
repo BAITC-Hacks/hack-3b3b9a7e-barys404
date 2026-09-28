@@ -9,6 +9,18 @@ from backend.api import main as api
 from backend.analytics.dashboard_data import hospital_directory
 
 
+def test_frontend_version_tracks_both_code_and_styles_without_caching_html(monkeypatch, tmp_path):
+    monkeypatch.setattr(api, "DIST", tmp_path)
+    assert api.frontend_version() == {"assets": []}
+    index = tmp_path / "index.html"
+    index.write_text('<script type="module" src="/assets/app-a.js"></script>'
+                     '<link rel="stylesheet" href="/assets/theme-a.css">', encoding="utf-8")
+    assert api.frontend_version() == {"assets": ["/assets/app-a.js", "/assets/theme-a.css"]}
+    assert api.frontend("").headers["cache-control"] == "no-store"
+    index.write_text(index.read_text().replace("theme-a.css", "theme-b.css"), encoding="utf-8")
+    assert api.frontend_version()["assets"][1] == "/assets/theme-b.css"
+
+
 def test_directory_lists_small_hospitals_but_suppresses_unstable_rates(tmp_path):
     cohort = pd.DataFrame({
         "hospital_mo": ["Large"] * 10 + ["Small"],

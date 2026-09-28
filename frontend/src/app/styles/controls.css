@@ -1,0 +1,41 @@
+.icon-button {
+  display: grid;
+  place-items: center;
+  border: 1px solid #e0ebe7;
+  background: #fff;
+  color: #5f8782;
+  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+}
+
+.icon-button:hover {
+  color: #13796d;
+  background: #eff8f5;
+}
+
+.reset-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.reset-button:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.reset-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

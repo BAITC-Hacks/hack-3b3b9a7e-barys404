@@ -11,7 +11,7 @@ The loader detects datasets by their CSV columns and automatically combines newl
 Generated Parquet files and quality reports are written to `processed/` and are also excluded from Git. Each teammate must obtain the authorized source files through the team's approved data-sharing channel, then run:
 
 ```powershell
-.\run.ps1
+python -m scripts.bootstrap
 ```
 
-For the complete final-demo evidence, use `run.ps1 -Validate` before presenting. The interface lists every local CSV and marks files that are not connected to the hospital pipeline. Oncology and vaccination files are not model inputs. Laboratory research data (EIP) has not yet been provided; no laboratory forecast is claimed.
+For temporal validation evidence, use `python -m scripts.bootstrap --validate` before presenting; check readiness with `python -m scripts.demo_check`. Inspect local source coverage with `python -m scripts.inspect_data`. Oncology and vaccination files are not model inputs. Laboratory research data (EIP) has not yet been provided; no laboratory forecast is claimed.

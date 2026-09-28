@@ -7,6 +7,7 @@ import hmac
 import json
 from functools import lru_cache
 import math
+import re
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Depends, Request
@@ -19,6 +20,7 @@ import psycopg
 
 from backend.analytics import dashboard_data as db
 from backend.api.auth import router as auth_router, require, resolve_hospital, check_csrf, PRODUCTION
+from backend.api.admin import router as admin_router
 from backend.auth import store
 from backend.auth.store import Principal
 from backend.auth.scope import DataScope
@@ -42,6 +44,7 @@ app = FastAPI(title="MedFlow AI API", version="2.0.0",
               redoc_url=None if PRODUCTION else "/redoc",
               openapi_url=None if PRODUCTION else "/openapi.json")
 app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 @app.middleware("http")
@@ -473,6 +476,18 @@ def briefing_pdf(payload: ReviewedBriefingRequest, user: Principal = Depends(req
 
 # A built frontend is served by the same local process for an offline demo.
 DIST = ROOT / "frontend" / "dist"
+
+
+@app.get("/api/frontend-version", include_in_schema=False)
+def frontend_version():
+    """Public build identity only; lets open SPA tabs detect a newer build."""
+    index = DIST / "index.html"
+    if not index.exists():
+        return {"assets": []}
+    assets = re.findall(r'(?:src|href)="(/assets/[^"]+\.(?:js|css))"', index.read_text(encoding="utf-8"))
+    return {"assets": sorted(set(assets))}
+
+
 if DIST.exists():
     app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
 
@@ -484,4 +499,4 @@ if DIST.exists():
     def frontend(path: str):
         if path.startswith("api/"):
             raise HTTPException(404)
-        return FileResponse(DIST / "index.html")
+        return FileResponse(DIST / "index.html", headers={"Cache-Control": "no-store"})

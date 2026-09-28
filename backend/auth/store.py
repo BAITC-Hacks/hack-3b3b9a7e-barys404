@@ -25,7 +25,7 @@ ANALYST = frozenset({"overview:read", "hospital:read", "forecast:read", "waiting
 PERMISSIONS = {
     "government_analyst": ANALYST | {"hospital:list", "comparison:read"},
     "hospital_analyst": ANALYST,
-    "platform_admin": frozenset({"system:read", "methodology:read"}),
+    "platform_admin": frozenset({"system:read", "methodology:read", "accounts:manage"}),
 }
 
 

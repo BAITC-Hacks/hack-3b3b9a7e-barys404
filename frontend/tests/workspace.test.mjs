@@ -5,9 +5,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 import { load } from './helpers/load.mjs'
 
-const { BriefingPanel } = await load('src/components/briefing/BriefingPanel.tsx')
-const { BriefingReview } = await load('src/components/briefing/BriefingReview.tsx')
-const api = await load('src/api/client.ts')
+const { BriefingPanel } = await load('src/features/export-briefing/ui/BriefingPanel.tsx')
+const { BriefingReview } = await load('src/features/export-briefing/ui/BriefingReview.tsx')
+const api = await load('src/shared/api/client.ts')
 const render = (component, props) => renderToStaticMarkup(createElement(component, props))
 
 test('a new briefing cannot download until preview and review', () => {

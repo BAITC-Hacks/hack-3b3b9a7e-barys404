@@ -1,10 +1,7 @@
 import { LayoutDashboard, Building2, GitCompareArrows, Sparkles, Database } from 'lucide-react'
 
-export type View = 'overview' | 'hospitals' | 'hospital' | 'compare' | 'forecasts' | 'data'
-
-export type Mode = 'government' | 'hospital'
-
-export type NavItem = { id: View; label: string; icon: typeof LayoutDashboard }
+import type { NavItem, View } from '../shared/config/navigation'
+export type { Mode, NavItem, View } from '../shared/config/navigation'
 
 export const NAV: NavItem[] = [
   { id: 'overview', label: 'Обзор', icon: LayoutDashboard },

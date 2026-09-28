@@ -1,0 +1,258 @@
+@media (max-width: 1260px) {
+  .content {
+    padding: 24px 24px 60px;
+  }
+  .topbar {
+    padding: 0 24px;
+  }
+  .main-grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
+  }
+  .metrics-grid {
+    gap: 12px;
+  }
+  .metric-card {
+    padding: 17px;
+  }
+  .metric-value {
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .sidebar {
+    width: 214px;
+  }
+  .workspace {
+    margin-left: 214px;
+  }
+  .main-grid,
+  .bottom-grid,
+  .data-grid {
+    grid-template-columns: 1fr;
+  }
+  .metric-card {
+    min-height: 137px;
+  }
+  .trend-panel,
+  .attention-panel {
+    min-height: 0;
+  }
+  .compare-layout {
+    grid-template-columns: 250px 1fr;
+  }
+  .forecast-lower {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    transform: translateX(-105%);
+    transition: transform 0.25s;
+    width: 246px;
+  }
+  .sidebar-open {
+    transform: translateX(0);
+  }
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    border: 0;
+    background: rgba(9, 44, 42, 0.35);
+  }
+  .workspace {
+    margin-left: 0;
+  }
+  .topbar {
+    height: 65px;
+    padding: 0 18px;
+  }
+  .mobile-menu {
+    display: grid;
+    border: 0;
+    background: transparent;
+  }
+  .breadcrumbs {
+    flex: 1;
+  }
+  .breadcrumbs > span,
+  .breadcrumbs > svg {
+    display: none;
+  }
+  .topbar-actions {
+    gap: 7px;
+  }
+  .period-chip {
+    display: none;
+  }
+  .content {
+    padding: 17px 16px 45px;
+  }
+  .page-heading {
+    align-items: start;
+  }
+  .page-heading h1 {
+    font-size: 28px;
+  }
+  .heading-badge {
+    display: none;
+  }
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metric-card {
+    min-height: 134px;
+  }
+  .compare-layout,
+  .wait-layout {
+    grid-template-columns: 1fr;
+  }
+  .compare-picker {
+    max-height: 270px;
+  }
+  .compare-results {
+    min-height: 0;
+  }
+  .data-intro {
+    align-items: start;
+    flex-direction: column;
+  }
+  .data-intro-numbers {
+    width: 100%;
+  }
+  .forecast-lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    gap: 6px;
+  }
+  .mode-switch button {
+    padding: 7px;
+    font-size: 0.875rem;
+  }
+  .metrics-grid {
+    gap: 9px;
+  }
+  .metric-card {
+    padding: 15px 13px;
+    min-height: 128px;
+  }
+  .metric-value {
+    font-size: 23px;
+    margin-top: 20px;
+  }
+  .metric-note {
+    font-size: 0.875rem;
+  }
+  .panel {
+    padding: 18px;
+  }
+  .panel-heading {
+    flex-wrap: wrap;
+  }
+  .outcome-row {
+    grid-template-columns: 100px 1fr 55px;
+    gap: 8px;
+  }
+  .table-head,
+  .hospital-row {
+    grid-template-columns: minmax(0, 1fr) 65px 52px 16px;
+    gap: 6px;
+  }
+  .table-head > span:nth-child(4),
+  .hospital-row > .hospital-cell:nth-child(4) {
+    display: none;
+  }
+  .hospital-row {
+    padding: 10px 13px;
+  }
+  .table-head {
+    padding: 10px 13px;
+    font-size: 0.875rem;
+  }
+  .directory-toolbar {
+    padding: 15px;
+  }
+  .hospital-cell {
+    font-size: 0.875rem;
+  }
+  .name-cell {
+    gap: 6px;
+  }
+  .hospital-avatar {
+    width: 26px;
+    height: 26px;
+  }
+  .compare-bar-row {
+    grid-template-columns: minmax(0, 120px) 1fr 55px;
+    gap: 7px;
+  }
+  .compare-cards {
+    grid-template-columns: 1fr;
+  }
+  .wait-form {
+    grid-template-columns: 1fr;
+  }
+  .forecast-summary {
+    flex-direction: column;
+    align-items: start;
+  }
+  .data-intro {
+    padding: 23px;
+  }
+  .limitations-grid {
+    grid-template-columns: 1fr;
+  }
+  .pathway-panel {
+    flex-direction: column;
+    align-items: start;
+  }
+  .tab-bar {
+    width: 100%;
+  }
+  .tab-bar button {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 5px;
+    font-size: 0.875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .topbar,
+  .filter-bar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #fff;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .metric-card,
+  .panel,
+  .filter-bar {
+    border-color: #779e93;
+  }
+  .topbar {
+    background: #fff;
+  }
+  .nav-link {
+    color: #fff;
+  }
+}

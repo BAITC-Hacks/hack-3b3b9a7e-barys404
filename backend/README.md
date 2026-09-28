@@ -1,10 +1,10 @@
 # Бэкенд
 
 - `api/main.py`: FastAPI и раздача `frontend/dist`.
+- `auth/`: аккаунты, сессии и права доступа в PostgreSQL.
 - `analytics/`: агрегированные запросы и исторические показатели.
 - `data_pipeline/`: обнаружение CSV, очистка, связывание и Parquet.
 - `core/`: общие настройки, безопасный SQL и атомарный JSON.
-- `legacy/`: сохранённый Streamlit; основной API его не импортирует.
 
 Из корня: `python -m scripts.serve` или `python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8000`.
 

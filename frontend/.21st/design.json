@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "project": {
+    "name": "medflow-web",
+    "productType": "Hospital referral analytics workspace",
+    "stack": ["react", "vite"]
+  },
+  "sources": {
+    "tokens": ["src/app/styles/theme.css"],
+    "components": ["src/shared/ui"],
+    "assets": [],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "light",
+    "colors": { "canvas": "#f6f7f9", "surface": "#ffffff", "ink": "#202a32", "accent": "#137e74" },
+    "typography": { "family": "system-ui", "heading": "24–30px / 650", "body": "14–16px" },
+    "spacing": {},
+    "radius": { "panel": "10px", "control": "8px" },
+    "shadows": { "content": "none" },
+    "motion": {
+      "controls": "120ms press/hover feedback",
+      "entrance": "Native Web Animations: 560ms/18px lift, 90ms stagger, 700–850ms chart reveals; no loops; reduced motion",
+      "tabs": "420ms sliding indicator, interruptible from current position"
+    },
+    "density": "compact, readable operational workspace"
+  },
+  "components": {
+    "installed": [
+      "EmptyState",
+      "ErrorBox",
+      "ErrorState",
+      "Loading",
+      "MetricCard",
+      "PageHeading",
+      "SearchForm",
+      "StatusPill"
+    ],
+    "preferredPrimitives": ["PageHeading", "MetricCard", "SearchForm", "Loading", "ErrorState"],
+    "patterns": ["metric ledger", "asymmetric chart and outcome columns", "manual submitted search"]
+  },
+  "constraints": {
+    "must": [
+      "Preserve server RBAC and API contracts",
+      "Use real historical data",
+      "Keep labels, units and periods visible",
+      "Use FSD public APIs",
+      "Glass only on floating header"
+    ],
+    "avoid": [
+      "Decorative gradients",
+      "Repeated uppercase kickers",
+      "Oversized dashboard headlines",
+      "Invented metrics or patient data",
+      "New UI library for existing primitives"
+    ]
+  },
+  "decisions": [
+    {
+      "date": "2026-09-28",
+      "scope": "workspace shell and overview",
+      "direction": "Light clinical workspace; restrained teal; metric ledger; no decorative cards",
+      "basis": "User requested understandable minimalism with slight liquid glass, less AI-template appearance and FSD"
+    },
+    {
+      "date": "2026-09-28",
+      "scope": "welcome, login and administration",
+      "direction": "Shared light clinical tokens, factual public copy, quiet split login, account metric ledger and flat table",
+      "basis": "User requested the same 21st rules on public pages and admin; existing authentication and account controls preserved"
+    },
+    {
+      "date": "2026-09-28",
+      "scope": "page entry, tabs, hospital picker and forecast result",
+      "direction": "Visible staggered entrances, left-to-right chart reveals and sliding tab indicators; no count-ups, looping effects or new dependencies",
+      "basis": "User found the initial motion too subtle and requested noticeably more movement"
+    },
+    {
+      "date": "2026-09-28",
+      "scope": "forecasts and hospital list labels",
+      "direction": "One hospital chooser with the selected legal name repeated under the heading at the user's request; task-specific headings, full-width profile field, neutral compact result with visible limitations and expandable technical detail; remove only legal prefixes from list labels",
+      "basis": "User approved a reversible anti-template refinement focused on first-time usability; preserve prediction requests, original hospital identities and motion"
+    },
+    {
+      "date": "2026-09-28",
+      "scope": "shared referral filter bar",
+      "direction": "Grouped native start/end date inputs under one period legend, inline edge labels, aligned 48px controls and compact responsive layout; no custom calendar dependency",
+      "basis": "User requested a more polished date section without changing filtering behavior"
+    }
+  ],
+  "evidence": [
+    {
+      "fact": "components.installed",
+      "source": "src/shared/ui"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:vite",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-09-28T14:52:35.769Z"
+}

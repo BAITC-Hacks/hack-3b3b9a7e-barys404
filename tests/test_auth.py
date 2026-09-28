@@ -217,3 +217,53 @@ def test_temporary_password_blocks_analytics_and_login_does_not_need_data(accoun
     assert a.get("/api/auth/me").json()["must_change_password"] is True
     assert a.get("/api/overview").status_code == 403
     assert mutate(a, "/api/auth/change-password", {"current_password": PASSWORD, "new_password": "another-test-password"}).status_code == 200
+
+
+def test_admin_account_directory_is_private_bounded_and_contains_no_secrets(accounts):
+    anonymous = TestClient(api.app, base_url=BASE)
+    assert anonymous.get("/api/admin/users").status_code == 401
+    for login in ("a", "gov"):
+        client = signed_in(login)
+        assert client.get("/api/admin/users").status_code == 403
+        assert mutate(client, "/api/admin/users/unknown/status", {"active": False}).status_code == 403
+        assert mutate(client, "/api/admin/users/unknown/delete", {"login": "a"}).status_code == 403
+    admin = signed_in("admin")
+    response = admin.get("/api/admin/users")
+    assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
+    result = response.json()
+    assert result["summary"] == {"total": 4, "active": 4, "blocked": 0}
+    assert result["total"] == 4
+    assert set(result["items"][0]) == {"id", "login", "display_name", "role", "active", "hospital_id", "hospital_name", "organization_active"}
+    assert admin.get("/api/admin/users?search=Hospital%20A").json()["total"] == 1
+    assert admin.get("/api/admin/users?search=%25").json()["total"] == 0
+    assert admin.get("/api/admin/users?role=hospital_analyst").json()["total"] == 2
+    assert len(admin.get("/api/admin/users?limit=1&offset=1").json()["items"]) == 1
+    assert admin.get("/api/admin/users?limit=101").status_code == 422
+    assert admin.post("/api/admin/users/unknown/status", json={"active": False}).status_code == 403
+    assert mutate(admin, "/api/admin/users/unknown/status", {"active": 1}).status_code == 422
+
+
+def test_admin_block_unblock_and_delete_only_disposable_accounts(accounts):
+    admin = signed_in("admin")
+    employee = signed_in("a")
+    users = {row["login"]: row for row in admin.get("/api/admin/users").json()["items"]}
+    route = f"/api/admin/users/{users['a']['id']}"
+    assert mutate(admin, route + "/status", {"active": False}).status_code == 200
+    assert employee.get("/api/auth/me").status_code == 401
+    assert admin.get("/api/admin/users?status=blocked").json()["total"] == 1
+    assert mutate(employee, "/api/auth/login", {"login": "a", "password": PASSWORD}).status_code == 401
+    assert mutate(admin, route + "/status", {"active": True}).status_code == 200
+    employee = signed_in("a")
+    assert mutate(admin, route + "/delete", {"login": "wrong-account"}).status_code == 409
+    assert employee.get("/api/auth/me").status_code == 200
+    assert mutate(admin, route + "/delete", {"login": "a"}).status_code == 200
+    assert employee.get("/api/auth/me").status_code == 401
+    assert admin.get("/api/admin/users").json()["summary"]["total"] == 3
+    assert len(store.organizations()) == 2
+    assert mutate(admin, route + "/delete", {"login": "a"}).status_code == 404
+    own = f"/api/admin/users/{users['admin']['id']}"
+    assert mutate(admin, own + "/status", {"active": False}).status_code == 409
+    assert mutate(admin, own + "/delete", {"login": "admin"}).status_code == 409
+    with pytest.raises(ValueError, match="последнего"):
+        store.update_user("admin", active=False)
+    assert admin.get("/api/auth/me").status_code == 200

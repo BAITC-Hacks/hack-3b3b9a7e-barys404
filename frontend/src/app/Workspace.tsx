@@ -1,22 +1,22 @@
 import { Building2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { hospitalId, hospitalName } from '../api/client'
-import { type Bootstrap, type Filters, type User } from '../api/types'
-import { FilterBar } from '../components/filters/FilterBar'
-import { HospitalChooser } from '../components/hospitals/HospitalChooser'
-import { Onboarding } from '../components/layout/Onboarding'
-import { Sidebar } from '../components/layout/Sidebar'
-import { WorkspaceHeader } from '../components/layout/WorkspaceHeader'
-import { EmptyState } from '../components/ui/EmptyState'
-import { ErrorState } from '../components/ui/ErrorState'
-import { Loading } from '../components/ui/Loading'
-import { useRemote } from '../hooks/useRemote'
-import { ComparePage } from '../pages/ComparePage'
-import { DataPage } from '../pages/DataPage'
-import { ForecastsPage } from '../pages/ForecastsPage'
-import { HospitalPage } from '../pages/HospitalPage'
-import { HospitalsPage } from '../pages/HospitalsPage'
-import { OverviewPage } from '../pages/OverviewPage'
+import { hospitalId, hospitalName } from '../entities/hospital/index'
+import { type Bootstrap, type Filters, type User } from '../shared/api/types'
+import { FilterBar } from '../features/filter-referrals/index'
+import { HospitalChooser } from '../features/select-hospital/index'
+import { Sidebar } from '../widgets/workspace-shell/index'
+import { WorkspaceHeader } from '../widgets/workspace-shell/index'
+import { EmptyState } from '../shared/ui/EmptyState'
+import { ErrorState } from '../shared/ui/ErrorState'
+import { Loading } from '../shared/ui/Loading'
+import { useRemote } from '../shared/lib/useRemote'
+import { useEntrance } from '../shared/lib/useEntrance'
+import { ComparePage } from '../pages/compare/index'
+import { DataPage } from '../pages/methodology/index'
+import { ForecastsPage } from '../pages/forecasts/index'
+import { HospitalPage } from '../pages/hospital/index'
+import { HospitalsPage } from '../pages/hospitals/index'
+import { OverviewPage } from '../pages/overview/index'
 import { currentRoute, NAV, type Mode, type NavItem, type View } from './navigation'
 
 export function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
@@ -58,7 +58,10 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
     if (window.location.hash === `#${next}`) setRoute(currentRoute())
     else window.location.hash = next
     setMenuOpen(false)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({
+      top: 0,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    })
   }
   const openHospital = (name: string) => {
     setHospital(name)
@@ -72,6 +75,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
     !(mode === 'hospital' && ['hospitals', 'compare'].includes(route.view)) &&
     !(route.hospital && boot.data && !hospitalName(route.hospital))
   const activeView = route.view
+  const pageEntrance = useEntrance<HTMLElement>(activeView, 'fade')
   const title = NAV.find((item) => item.id === activeView)?.label ?? 'Стационар'
   const visibleNav: NavItem[] =
     mode === 'hospital'
@@ -103,7 +107,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
       <div className="workspace">
         <WorkspaceHeader
           title={activeView === 'hospital' ? 'Карточка стационара' : title}
-          period={boot.data?.period}
+          period={filters.start ? { start: filters.start, end: filters.end } : boot.data?.period}
           user={user}
           logout={logout}
           openMenu={() => setMenuOpen(true)}
@@ -118,7 +122,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
         ) : (
           boot.data &&
           filters.start && (
-            <main className="content">
+            <main className="content" ref={pageEntrance}>
               {mode === 'hospital' && (
                 <div className="hospital-context">
                   <Building2 size={18} />
@@ -145,8 +149,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                 />
               ) : (
                 <>
-                  {activeView === 'overview' && <Onboarding user={user} go={navigate} />}
-                  {['overview', 'hospitals', 'hospital', 'compare'].includes(activeView) && (
+                  {['hospitals', 'hospital', 'compare'].includes(activeView) && (
                     <FilterBar filters={filters} setFilters={setFilters} bootstrap={boot.data} />
                   )}
                   {activeView === 'overview' && (
@@ -154,6 +157,8 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                       mode={mode}
                       hospital={hospital}
                       filters={filters}
+                      setFilters={setFilters}
+                      bootstrap={boot.data}
                       openHospital={openHospital}
                       go={navigate}
                     />
@@ -178,11 +183,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                     />
                   )}
                   {activeView === 'forecasts' && (
-                    <ForecastsPage
-                      hospital={hospital}
-                      go={navigate}
-                      canChoose={mode === 'government'}
-                    />
+                    <ForecastsPage hospital={hospital} go={navigate} />
                   )}
                   {activeView === 'data' && <DataPage />}
                 </>

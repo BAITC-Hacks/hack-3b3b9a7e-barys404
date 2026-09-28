@@ -1,0 +1,187 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--canvas);
+}
+.sidebar {
+  position: fixed;
+  z-index: 20;
+  inset: 0 auto 0 0;
+  width: var(--sidebar-width);
+  padding: 24px 14px 20px;
+  background: var(--surface);
+  color: var(--ink);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 30px;
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: white;
+  display: grid;
+  place-items: center;
+}
+.brand strong {
+  display: block;
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  font-weight: 650;
+}
+.brand strong span {
+  color: var(--accent);
+}
+.brand small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.sidebar-divider {
+  height: 1px;
+  background: var(--line);
+  margin-bottom: 18px;
+}
+.sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+.nav-link {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  padding: 11px 12px;
+  min-height: 44px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+.nav-link:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+.nav-link:active {
+  background: var(--accent-soft);
+}
+.nav-active,
+.nav-active:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 650;
+}
+.nav-active svg {
+  color: var(--accent);
+}
+.nav-indicator {
+  display: none;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 18px 10px 0;
+  border-top: 1px solid var(--line);
+}
+.sidebar-live {
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+}
+.sidebar-live span {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.sidebar-bottom p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+.sidebar-version {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.workspace {
+  margin-left: var(--sidebar-width);
+  min-width: 0;
+  flex: 1;
+}
+
+/* Glass belongs to the floating chrome, not the content or charts. */
+.topbar {
+  height: 68px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.breadcrumbs strong {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.period-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.content {
+  max-width: 1480px;
+  margin: auto;
+  padding: 28px 32px 64px;
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .topbar {
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

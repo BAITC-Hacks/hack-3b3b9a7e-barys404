@@ -1,0 +1,29 @@
+/* Public page breakpoints live next to their owning styles. */
+@media (max-width: 1080px) {
+  .topbar-actions {
+    gap: 12px;
+  }
+}
+@media (max-width: 760px) {
+  .user-menu strong {
+    max-width: 120px;
+    font-size: 0.875rem;
+  }
+  .user-menu {
+    gap: 8px;
+  }
+  .methodology-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 420px) {
+  .topbar .breadcrumbs strong {
+    font-size: 0.875rem;
+  }
+  .user-menu strong {
+    max-width: 95px;
+  }
+  .user-menu small {
+    font-size: 0.875rem;
+  }
+}

@@ -1,13 +1,10 @@
-"""Dashboard cohort semantics and an empty-state smoke test."""
+"""Shared dashboard cohort, outcome and comparison semantics."""
 from datetime import date
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from backend.analytics.dashboard_data import historical_charts, overview, compare_groups, comparison_trends
-from backend.legacy.navigation import HOSPITAL_TYPE_NAMES, PAGE_NAMES, ROLE_NAMES, sections_for_role
-from backend.legacy.ui import save_uploaded_csvs
 
 
 @pytest.fixture
@@ -49,48 +46,6 @@ def test_events_use_actual_outcome_dates_and_outputs_have_no_identifiers(dashboa
     for output in (events, waits, hospitals):
         assert "hospitalization_code" not in output.columns
         assert not any(output.astype(str).apply(lambda column: column.str.contains("test-only-id")).any())
-
-
-def test_streamlit_empty_state_never_fabricates_metrics(tmp_path, monkeypatch):
-    from streamlit.testing.v1 import AppTest
-    import backend.legacy.ui as ui
-
-    monkeypatch.setattr(ui, "ANALYTICAL_PATH", tmp_path / "absent.parquet")
-    monkeypatch.setattr(ui, "QUALITY_PATH", tmp_path / "absent.json")
-    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "app.py", default_timeout=30).run()
-    assert not app.exception
-    assert not app.metric
-    assert "Загрузите данные" in [heading.value for heading in app.title]
-    assert app.sidebar.selectbox(key="user_role").value == "hospital_lead"
-    assert app.sidebar.selectbox(key="hospital_type").value == "multidisciplinary"
-    assert app.file_uploader(key="empty_source_upload")
-
-
-def test_every_role_keeps_all_pages_available_once():
-    expected = set(PAGE_NAMES)
-    for role in ROLE_NAMES:
-        pages = [page for group in sections_for_role(role).values() for page in group]
-        assert set(pages) == expected
-        assert len(pages) == len(expected)
-    assert len(HOSPITAL_TYPE_NAMES) >= 4
-
-
-def test_uploaded_csvs_are_saved_without_silent_overwrite(tmp_path):
-    class Upload:
-        def __init__(self, name, data):
-            self.name, self.data = name, data
-
-        def getvalue(self):
-            return self.data
-
-    first = Upload("waiting.csv", b"a,b\n1,2\n")
-    saved, existing, conflicts = save_uploaded_csvs([first], tmp_path)
-    assert saved == ["waiting.csv"] and not existing and not conflicts
-    saved, existing, conflicts = save_uploaded_csvs([first], tmp_path)
-    assert not saved and existing == ["waiting.csv"] and not conflicts
-    saved, existing, conflicts = save_uploaded_csvs([Upload("waiting.csv", b"changed")], tmp_path)
-    assert not saved and not existing and conflicts == ["waiting.csv"]
-    assert (tmp_path / "waiting.csv").read_bytes() == b"a,b\n1,2\n"
 
 
 def test_comparison_suppresses_small_groups_and_uses_known_outcome_denominator(dashboard_cohort):

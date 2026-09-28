@@ -12,7 +12,6 @@ backend/                  Python-бэкенд
   analytics/              SQL-агрегаты, исторические индикаторы, PDF-сводки
   data_pipeline/          Чтение CSV, проверки качества, подготовка Parquet
   core/                   Общие пути, настройки и работа с артефактами
-  legacy/                 Сохранённый Streamlit, отдельно от основного веб-API
 frontend/                 React + TypeScript + Vite: интерфейс и стили
 ml/                       Признаки, обучение, прогнозы, объяснения, валидация
   notebooks/              Исследовательский ноутбук с агрегатами
@@ -24,7 +23,6 @@ scripts/                  Подготовка, запуск, проверка �
 tests/                    Тесты логики, API, ML и границ архитектуры
 docs/                     Архитектура, результаты проверок и документация
   presentations/          Презентация и офлайн-слайды
-  legacy/                 Сценарии и инструкции прежнего Streamlit-интерфейса
 ```
 
 Папки `data/` и `models/` содержат файлы, не Python-код. Подробные границы модулей: [архитектура](docs/ARCHITECTURE.md).
@@ -62,7 +60,7 @@ npm --prefix frontend run build
 ## Проверки и обслуживание
 
 ```bash
-# Полное окружение: тесты, PDF и прежний Streamlit
+# Полное окружение: веб-версия, тесты и проверка PDF
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m pytest -q
 npm --prefix frontend test
@@ -78,9 +76,7 @@ npm --prefix frontend run build
 .venv/bin/python -m ml.validation
 ```
 
-`requirements-lock.txt` — полный фиксированный Python-набор для CI/демо. `requirements-api.txt` собирает зависимости только бэкенда и ML; Streamlit для веб-версии не требуется.
-
-Прежний интерфейс сохранён только для локального оператора, не использует RBAC и не должен публиковаться рядом с защищённой платформой: `streamlit run app.py` (порт 8501). Корневые `app.py` и `run.ps1` — небольшие совместимые точки входа, не второй набор бизнес-логики.
+`requirements-lock.txt` — фиксированный Python-набор для CI/демо. `requirements-api.txt` собирает зависимости бэкенда и ML, а `requirements.txt` добавляет тестовые инструменты. Единственный интерфейс проекта — React; запускается через `python -m scripts.serve`.
 
 ## Данные и прогнозы
 

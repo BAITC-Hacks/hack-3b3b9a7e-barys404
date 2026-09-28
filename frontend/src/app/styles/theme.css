@@ -1,0 +1,22 @@
+:root {
+  --surface: #ffffff;
+  --canvas: #f6f7f9;
+  --ink: #202a32;
+  --muted: #62717c;
+  --line: #e4e8ec;
+  --accent: #137e74;
+  --accent-soft: #eaf4f1;
+  --radius: 10px;
+  --sidebar-width: 232px;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
