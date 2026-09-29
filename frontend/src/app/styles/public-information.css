@@ -1,0 +1,300 @@
+.public-footer {
+  --footer-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  --footer-gap: 48px;
+  display: block;
+  width: calc(100% - 80px);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px 0 24px;
+  color: var(--muted);
+}
+.public-footer-main {
+  display: grid;
+  grid-template-columns: var(--footer-columns);
+  gap: var(--footer-gap);
+  padding-bottom: 28px;
+}
+.public-footer-about p {
+  max-width: 32ch;
+  margin: 18px 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.public-footer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.public-footer-status > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.public-footer nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.public-footer nav h2 {
+  margin: 2px 0 10px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+.public-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.public-footer nav a svg {
+  flex-shrink: 0;
+}
+.public-footer nav a:hover,
+.privacy-back:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.public-footer-bottom {
+  display: grid;
+  grid-template-columns: var(--footer-columns);
+  align-items: start;
+  gap: 16px var(--footer-gap);
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.welcome-page [id^='welcome-'] {
+  scroll-margin-top: 24px;
+}
+.privacy-page .privacy-main {
+  padding: 40px 40px 64px;
+}
+.privacy-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  min-height: 40px;
+}
+.privacy-heading {
+  max-width: 850px;
+  margin: 30px 0 44px;
+}
+.privacy-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.privacy-heading h1 {
+  font-size: clamp(30px, 3.6vw, 46px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  margin: 18px 0;
+  overflow-wrap: anywhere;
+}
+.privacy-heading > p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.75;
+  max-width: 65ch;
+}
+.privacy-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 48px;
+}
+.privacy-summary {
+  padding: 24px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.privacy-summary h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  line-height: 1.4;
+}
+.privacy-summary p {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.privacy-summary a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 32px;
+}
+.privacy-summary a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.privacy-forward {
+  transform: rotate(180deg);
+}
+.privacy-sections {
+  padding: 0 28px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.privacy-sections section {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 16px;
+  padding: 28px 0;
+}
+.privacy-sections section + section {
+  border-top: 1px solid var(--line);
+}
+.privacy-number {
+  font-size: 13px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  padding-top: 4px;
+}
+.privacy-sections h2 {
+  font-size: 19px;
+  line-height: 1.45;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+.privacy-sections p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.85;
+}
+.privacy-sections p + p {
+  margin-top: 12px;
+}
+@media (max-width: 960px) {
+  .public-footer {
+    --footer-gap: 28px;
+    width: calc(100% - 56px);
+  }
+  .privacy-page .privacy-main {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .privacy-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .privacy-summary p {
+    max-width: 75ch;
+  }
+}
+@media (max-width: 600px) {
+  .public-footer {
+    --footer-columns: minmax(0, 1fr);
+    width: calc(100% - 48px);
+    padding-top: 30px;
+  }
+  .public-footer-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+    padding-bottom: 28px;
+  }
+  .public-footer-about p {
+    max-width: 38ch;
+  }
+  .public-footer nav {
+    gap: 2px;
+  }
+  .public-footer nav a {
+    min-height: 44px;
+  }
+  .public-footer-bottom {
+    gap: 8px;
+  }
+  .privacy-page .privacy-main {
+    padding: 24px 24px 40px;
+  }
+  .privacy-heading {
+    margin: 24px 0 28px;
+  }
+  .privacy-heading > p {
+    font-size: 15px;
+  }
+  .privacy-summary {
+    padding: 20px;
+  }
+  .privacy-sections {
+    padding: 0 20px;
+  }
+  .privacy-sections section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 24px 0;
+  }
+  .privacy-sections h2 {
+    font-size: 18px;
+  }
+}
+
+.public-footer-contacts h2 {
+  margin: 2px 0 18px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+.public-footer-contacts address {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-style: normal;
+}
+.public-footer-contacts address > span,
+.public-footer-contacts address > a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.public-footer-contacts svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.public-footer-contacts small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.public-footer-bottom a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.public-footer-bottom a:hover,
+.public-footer-contacts a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

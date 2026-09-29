@@ -4,7 +4,7 @@ import { useStaggeredEntrance } from '../../../shared/lib/useEntrance'
 export function WelcomeMethod() {
   const entrance = useStaggeredEntrance<HTMLElement>()
   return (
-    <section className="welcome-method" ref={entrance}>
+    <section id="welcome-data" tabIndex={-1} className="welcome-method" ref={entrance}>
       <div>
         <h2>{t('Что показывают данные')}</h2>
       </div>

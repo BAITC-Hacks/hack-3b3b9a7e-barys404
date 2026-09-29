@@ -4,6 +4,7 @@ import { ApiError, clearPrivateData, get, post } from '../../shared/api/client'
 import { type User } from '../../shared/api/types'
 import { ChangePasswordPage } from '../../pages/change-password/index'
 import { LoginPage } from '../../pages/login/index'
+import { PrivacyPage } from '../../pages/privacy/index'
 import { WelcomePage } from '../../pages/welcome/index'
 
 export function AuthGate({
@@ -126,6 +127,10 @@ export function AuthGate({
     channel.current?.postMessage('changed')
     window.location.hash = 'login'
   }
+  // Public information remains accessible with or without an active session.
+  if (hash === '#privacy') return <PrivacyPage />
+  if (['#welcome', '#welcome/features', '#welcome/data'].includes(hash))
+    return <WelcomePage section={hash.split('/')[1]} />
   if (checking)
     return (
       <main className="auth-state">

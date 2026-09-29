@@ -5,7 +5,13 @@ import { useStaggeredEntrance } from '../../../shared/lib/useEntrance'
 export function WelcomeAudiences() {
   const entrance = useStaggeredEntrance<HTMLElement>()
   return (
-    <section className="welcome-audiences" aria-label={t('Для кого платформа')} ref={entrance}>
+    <section
+      id="welcome-features"
+      tabIndex={-1}
+      className="welcome-audiences"
+      aria-label={t('Для кого платформа')}
+      ref={entrance}
+    >
       <article>
         <span className="audience-icon">
           <Building2 size={22} />
