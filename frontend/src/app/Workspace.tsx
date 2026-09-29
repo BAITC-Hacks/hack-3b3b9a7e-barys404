@@ -209,7 +209,7 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                   {activeView === 'forecasts' && (
                     <ForecastsPage hospital={hospital} go={navigate} />
                   )}
-                  {activeView === 'data' && <DataPage />}
+                  {activeView === 'data' && <DataPage mode={mode} go={navigate} />}
                 </>
               )}
             </main>

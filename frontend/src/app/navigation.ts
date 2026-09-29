@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, GitCompareArrows, Sparkles, Database } from 'lucide-react'
+import { LayoutDashboard, Building2, GitCompareArrows, Sparkles, BookOpen } from 'lucide-react'
 
 import type { NavItem, View } from '../shared/config/navigation'
 export type { Mode, NavItem, View } from '../shared/config/navigation'
@@ -8,7 +8,7 @@ export const NAV: NavItem[] = [
   { id: 'hospitals', label: 'Стационары', icon: Building2 },
   { id: 'compare', label: 'Сравнение', icon: GitCompareArrows },
   { id: 'forecasts', label: 'Прогнозы', icon: Sparkles },
-  { id: 'data', label: 'Как читать показатели', icon: Database },
+  { id: 'data', label: 'Как начать работу', icon: BookOpen },
 ]
 
 export function currentRoute(): { view: View; hospital?: string } {

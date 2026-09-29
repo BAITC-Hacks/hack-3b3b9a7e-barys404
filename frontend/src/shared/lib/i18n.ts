@@ -1,3 +1,4 @@
+import { guideMessages } from './messages/guide'
 import { getPreferences } from './preferences'
 import { commonMessages } from './messages/common'
 import { errorMessages } from './messages/errors'
@@ -12,6 +13,7 @@ export const messages: Record<string, { kk: string; en: string }> = {
   ...analyticsMessages,
   ...accessMessages,
   ...themeMessages,
+  ...guideMessages,
 }
 
 export const getLocale = () =>

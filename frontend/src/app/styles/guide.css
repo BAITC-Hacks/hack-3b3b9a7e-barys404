@@ -1,0 +1,409 @@
+/* Tutorial styles stay scoped to the guide; screenshots are static local assets. */
+.guide-page {
+  --guide-gap: clamp(24px, 3vw, 44px);
+}
+.guide-start {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--guide-gap);
+  padding: 30px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.guide-start-copy {
+  align-self: center;
+}
+.guide-duration {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+.guide-duration > svg:first-child {
+  color: var(--accent);
+}
+.guide-start h2 {
+  font-size: clamp(23px, 2vw, 28px);
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+.guide-start p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+  max-width: 52ch;
+  margin-bottom: 22px;
+}
+.guide-route {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-left: 1px solid var(--line);
+  padding-left: 28px;
+}
+.guide-route button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: left;
+}
+.guide-route button:hover {
+  background: var(--canvas);
+}
+.guide-route button > span {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  min-width: 20px;
+}
+.guide-route button > svg {
+  margin-left: auto;
+  color: var(--muted);
+}
+.guide-image-note {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.guide-lesson {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.35fr);
+  gap: var(--guide-gap);
+  align-items: center;
+  padding: 44px 0;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 120px;
+}
+.guide-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.guide-step > span {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 500;
+}
+.guide-lesson h2 {
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+.guide-lesson-copy > p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.75;
+  margin-bottom: 20px;
+}
+.guide-instructions {
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.75;
+  margin: 0 0 24px;
+}
+.guide-instructions li {
+  padding-left: 6px;
+  margin-bottom: 10px;
+}
+.guide-instructions li::marker {
+  color: var(--muted);
+  font-size: 12px;
+}
+.guide-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+}
+.guide-action:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.guide-figure {
+  margin: 0;
+  min-width: 0;
+}
+.guide-screenshot {
+  display: block;
+  position: relative;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f6f7f9;
+  width: 100%;
+  cursor: zoom-in;
+}
+.guide-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.guide-zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11px;
+}
+.guide-figure figcaption {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+  margin-top: 12px;
+}
+.guide-wait-example {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.guide-wait-example summary {
+  padding: 14px 16px;
+  font-size: 13px;
+}
+.guide-wait-example .guide-figure {
+  padding: 0 14px 14px;
+}
+.guide-ready {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  margin: 36px 0 48px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.guide-ready-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.guide-ready h2 {
+  font-size: 19px;
+  margin-bottom: 5px;
+}
+.guide-ready p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 0;
+}
+.guide-ready button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.guide-faq {
+  display: grid;
+  grid-template-columns: 0.65fr 1.35fr;
+  gap: var(--guide-gap);
+  scroll-margin-top: 120px;
+}
+.guide-faq h2 {
+  font-size: 26px;
+  margin: 12px 0;
+}
+.guide-faq-heading p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+.guide-faq-list {
+  border-top: 1px solid var(--line);
+}
+.guide-faq-list details {
+  border-bottom: 1px solid var(--line);
+}
+.guide-faq summary,
+.guide-wait-example summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.6;
+}
+.guide-faq summary {
+  padding: 20px 0;
+  font-size: 15px;
+}
+.guide-faq summary::-webkit-details-marker,
+.guide-wait-example summary::-webkit-details-marker {
+  display: none;
+}
+.guide-faq summary svg,
+.guide-wait-example summary svg {
+  color: var(--muted);
+}
+.guide-page details[open] > summary svg {
+  transform: rotate(180deg);
+}
+.guide-faq details p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 0 30px 22px 0;
+}
+.guide-page button:focus-visible,
+.guide-page summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.guide-dialog {
+  width: min(1240px, 94vw);
+  max-height: 92vh;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink);
+  background: var(--surface);
+}
+.guide-dialog::backdrop {
+  background: rgb(0 0 0 / 65%);
+}
+.guide-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.guide-dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.guide-dialog img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.guide-dialog p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 12px 0 0;
+}
+@media (max-width: 1200px) {
+  .guide-start {
+    padding: 24px;
+  }
+  .guide-lesson {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .guide-lesson-copy {
+    max-width: 72ch;
+  }
+}
+@media (max-width: 760px) {
+  .guide-start,
+  .guide-faq {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .guide-start {
+    padding: 20px;
+  }
+  .guide-route {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 14px 0 0;
+  }
+  .guide-lesson {
+    padding: 30px 0;
+    scroll-margin-top: 240px;
+  }
+  .guide-lesson h2 {
+    font-size: 21px;
+  }
+  .guide-ready {
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 12px;
+  }
+  .guide-ready > div {
+    flex: 1;
+    min-width: 180px;
+  }
+  .guide-ready button {
+    margin-left: 0;
+  }
+  .guide-faq {
+    scroll-margin-top: 240px;
+  }
+  .guide-dialog {
+    padding: 12px;
+  }
+}
+.guide-lesson:focus,
+.guide-faq:focus {
+  outline: none;
+}
+.guide-dialog-image {
+  overflow: auto;
+  max-height: 72vh;
+  border-radius: 8px;
+}
+.guide-dialog-image img {
+  min-width: 900px;
+}
+
+.guide-faq-answer {
+  padding: 0 30px 22px 0;
+}
+.guide-faq .guide-faq-answer p {
+  margin: 0;
+}
+.guide-faq-list summary svg {
+  transition: transform 220ms ease;
+}
+.guide-faq-list details[data-expanded='false'] > summary svg {
+  transform: rotate(0);
+}
+.guide-faq-list details[data-expanded='true'] > summary svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-faq-list summary svg {
+    transition: none;
+  }
+}

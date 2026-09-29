@@ -36,7 +36,12 @@ export function SearchForm({
         aria-label={t(label)}
       />
       {value && (
-        <button type="button" onClick={onClear} aria-label={t('Очистить поиск')}>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={onClear}
+          aria-label={t('Очистить поиск')}
+        >
           <X size={16} />
         </button>
       )}
