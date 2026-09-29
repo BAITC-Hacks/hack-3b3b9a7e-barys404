@@ -1,6 +1,6 @@
 /* Scoped exceptions for browser-native controls and floating surfaces. */
 :root[data-theme='dark'] .topbar {
-  background: var(--surface);
+  background: var(--topbar-background, var(--surface));
 }
 
 :root[data-theme='dark'] .brand-mark {

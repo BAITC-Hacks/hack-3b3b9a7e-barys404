@@ -1327,3 +1327,54 @@
     transition: none;
   }
 }
+
+/* Keep the header's layout space while moving its sticky surface off screen. */
+.workspace .topbar {
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+.workspace .topbar--hidden {
+  transform: translateY(calc(-100% - 24px));
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace .topbar {
+    transition: none;
+  }
+}
+
+/* A single, small blur layer keeps the floating header light to render. */
+.workspace .topbar {
+  background: var(--topbar-background, var(--surface));
+  box-shadow:
+    inset 0 1px 0 var(--topbar-highlight, rgb(255 255 255 / 65%)),
+    0 4px 16px rgb(0 0 0 / 5%);
+}
+:root[data-theme='dark'] .workspace .topbar {
+  --topbar-highlight: rgb(255 255 255 / 7%);
+}
+@supports ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) and
+  (background: color-mix(in srgb, white 86%, transparent)) {
+  .workspace .topbar {
+    --topbar-background: color-mix(in srgb, var(--surface) 86%, transparent);
+    backdrop-filter: blur(8px) saturate(1.08);
+    -webkit-backdrop-filter: blur(8px) saturate(1.08);
+  }
+  @media (max-width: 760px) {
+    .workspace .topbar {
+      --topbar-background: color-mix(in srgb, var(--surface) 90%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .workspace .topbar {
+    --topbar-background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+}
