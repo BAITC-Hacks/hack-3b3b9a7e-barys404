@@ -1,0 +1,92 @@
+name: Deploy MedFlow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: medflow-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DEPLOY_HOST: 82.115.43.223
+      DEPLOY_USER: barys404
+      SITE_URL: https://barys404.govtech-kz.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package code and frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=tar --output="$RUNNER_TEMP/medflow.tar" \
+            "$GITHUB_SHA" backend frontend ml scripts docs README.md requirements-api.txt
+          tar -rf "$RUNNER_TEMP/medflow.tar" frontend/dist
+          gzip -n "$RUNNER_TEMP/medflow.tar"
+
+      - name: Configure deployment key
+        env:
+          DEPLOY_KEY: ${{ secrets.MEDFLOW_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.MEDFLOW_DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY"
+          test -n "$KNOWN_HOSTS"
+          install -d -m 700 "$RUNNER_TEMP/medflow-ssh"
+          umask 077
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/medflow-ssh/id_ed25519"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/medflow-ssh/known_hosts"
+
+      - name: Deploy release
+        shell: bash
+        run: |
+          set -euo pipefail
+          checksum=$(sha256sum "$RUNNER_TEMP/medflow.tar.gz" | cut -d ' ' -f 1)
+          ssh -i "$RUNNER_TEMP/medflow-ssh/id_ed25519" \
+            -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/medflow-ssh/known_hosts" \
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+            "$DEPLOY_USER@$DEPLOY_HOST" "deploy $GITHUB_SHA $checksum" \
+            < "$RUNNER_TEMP/medflow.tar.gz"
+
+      - name: Verify public website
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 4 --retry-all-errors \
+            --retry-delay 2 --max-time 15 "$SITE_URL/api/health"
+          curl --fail --silent --show-error --max-time 15 \
+            "$SITE_URL/" --output "$RUNNER_TEMP/live-index.html"
+          cmp frontend/dist/index.html "$RUNNER_TEMP/live-index.html"
+
+      - name: Remove temporary credentials
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/medflow-ssh/id_ed25519" "$RUNNER_TEMP/medflow-ssh/known_hosts"

@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from backend.core.config import ANALYTICAL_PATH, QUALITY_PATH
 from backend.core.utils import read_json
 from backend.data_pipeline.data_loader import source_fingerprint
+from backend.data_pipeline.deployment import DeploymentDataError
 from backend.modules.analytics import repository
 
 
@@ -14,7 +15,11 @@ def require_ready() -> dict:
     report = read_json(QUALITY_PATH)
     if not report.get("pipeline_complete"):
         raise HTTPException(503, "Подготовка данных не завершена.")
-    if report.get("source_fingerprint") != source_fingerprint():
+    try:
+        current = source_fingerprint()
+    except DeploymentDataError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if report.get("source_fingerprint") != current:
         raise HTTPException(
             409,
             "Исходные CSV изменились. Обновите данные и модели через python -m scripts.bootstrap.",

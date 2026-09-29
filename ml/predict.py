@@ -10,6 +10,7 @@ import pandas as pd
 
 from backend.core import config
 from backend.data_pipeline.data_loader import source_fingerprint
+from backend.data_pipeline.deployment import DeploymentDataError
 from ml.feature_engineering import make_features
 from backend.core.utils import read_json
 from ml.waiting_estimator import VERSION, calibrated_predictions
@@ -40,7 +41,11 @@ def model_status() -> dict:
     if not report.get("pipeline_complete"):
         return {"available": False, "stale": True, "reason": "Data processing is incomplete. Finish preprocessing and retrain the model."}
     fingerprint = metadata.get("source_fingerprint")
-    stale = not fingerprint or fingerprint != report.get("source_fingerprint") or fingerprint != source_fingerprint()
+    try:
+        current = source_fingerprint()
+    except DeploymentDataError as exc:
+        return {"available": False, "stale": True, "reason": str(exc)}
+    stale = not fingerprint or fingerprint != report.get("source_fingerprint") or fingerprint != current
     return {"available": not stale, "stale": stale, "reason": "Source or processed data changed. Retrain the model." if stale else "Model ready."}
 
 

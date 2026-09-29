@@ -14,10 +14,12 @@ from backend.core.config import (
     MAX_WAIT_DAYS,
     MIN_DATE,
     MIN_WAIT_DAYS,
+    MODELS_DIR,
     PROCESSED_DIR,
     THREAD_COUNT,
 )
 from backend.core.utils import sql_identifier, sql_literal
+from backend.data_pipeline.deployment import deployment_fingerprint
 
 SIGNATURES = {
     "waiting": {"region_origin_code", "mo_destination_code", "profile_code", "patient_seq_no", "registration_dt"},
@@ -58,10 +60,25 @@ def discover_files(data_dir=DATA_DIR):
 
 def source_fingerprint(files=None):
     files = discover_files() if files is None else files
-    payload = {"pipeline_version": 3, "date_bounds": [MIN_DATE, MAX_DATE], "wait_days_range": [MIN_WAIT_DAYS, MAX_WAIT_DAYS],
-               "files": [(category, str(path.resolve()), path.stat().st_size, path.stat().st_mtime_ns)
-                         for category, paths in sorted(files.items()) for path in paths]}
+    portable = deployment_fingerprint(files, fingerprint_policy(), PROCESSED_DIR, MODELS_DIR)
+    if portable is not None:
+        return portable
+
+    payload = fingerprint_policy()
+    payload["files"] = [
+        (category, str(path.resolve()), path.stat().st_size, path.stat().st_mtime_ns)
+        for category, paths in sorted(files.items())
+        for path in paths
+    ]
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+
+def fingerprint_policy() -> dict:
+    return {
+        "pipeline_version": 3,
+        "date_bounds": [MIN_DATE, MAX_DATE],
+        "wait_days_range": [MIN_WAIT_DAYS, MAX_WAIT_DAYS],
+    }
 
 def coverage(files):
     result = {}
