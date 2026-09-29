@@ -26,30 +26,31 @@
    remaps those semantic roles without inverting charts or changing status colors. */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --surface: #18242d;
-  --canvas: #10191f;
-  --ink: #e5edf1;
-  --muted: #a8b9c3;
-  --line: #354650;
-  --accent: #73d7c5;
-  --accent-soft: #203d3b;
+  --surface: #181a1b;
+  --canvas: #1c1f20;
+  --ink: #cecac3;
+  --muted: #a29a8e;
+  --line: #363b3d;
+  --accent: #7aebe0;
+  --accent-soft: #182e29;
   --tone-ink: var(--ink);
   --tone-muted: var(--muted);
   --tone-accent: var(--accent);
   --tone-surface: var(--surface);
-  --tone-raised: #21313a;
+  --tone-raised: #252829;
   --tone-soft: var(--accent-soft);
   --tone-border: var(--line);
   --tone-error: #ffb8a8;
   --tone-error-soft: #432d2b;
   --tone-error-border: #805148;
   --tone-warning: #f2b28f;
-  --chart-observed: #73d7c5;
+  --chart-grid: #898985;
+  --chart-observed: #7aebe0;
   --chart-forecast: #9fbee8;
-  --chart-forecast-bg: #20333e;
-  --chart-guide: #7894a4;
-  --chart-point-border: #18242d;
-  --chart-tooltip-bg: #263c49;
-  --chart-tooltip-muted: #c0d1dc;
-  --chart-tooltip-ink: #f4f8fa;
+  --chart-forecast-bg: #202a2c;
+  --chart-guide: #99958d;
+  --chart-point-border: #181a1b;
+  --chart-tooltip-bg: #292d2e;
+  --chart-tooltip-muted: #b9b2a7;
+  --chart-tooltip-ink: #e8e6e3;
 }

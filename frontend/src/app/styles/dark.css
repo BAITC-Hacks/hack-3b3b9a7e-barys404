@@ -1,10 +1,11 @@
 /* Scoped exceptions for browser-native controls and floating surfaces. */
 :root[data-theme='dark'] .topbar {
-  background: rgba(24, 36, 45, 0.94);
+  background: var(--surface);
 }
 
 :root[data-theme='dark'] .brand-mark {
-  color: #102c28;
+  background: #0f655d;
+  color: #e8e6e3;
 }
 
 :root[data-theme='dark'] .date-range-field input[type='date'] {
@@ -51,4 +52,8 @@
   .nav-active:hover {
     color: var(--accent);
   }
+}
+
+:root[data-theme='dark'] .chart-grid {
+  stroke: var(--chart-grid);
 }
