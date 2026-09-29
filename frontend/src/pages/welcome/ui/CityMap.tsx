@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { MapPin, RotateCcw } from 'lucide-react'
 import { t } from '../../../shared/lib/i18n'
 import { moveTo } from '../model/cityMapData'
@@ -32,13 +31,14 @@ export function CityMap({
 
     async function initialize() {
       try {
-        const [maplibre] = await Promise.all([
+        const [maplibre, worker] = await Promise.all([
           import('maplibre-gl'),
+          import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'),
           import('maplibre-gl/dist/maplibre-gl.css'),
         ])
         if (disposed || !canvasRef.current) return
 
-        maplibre.setWorkerUrl(workerUrl)
+        maplibre.setWorkerUrl(worker.default)
         map = new maplibre.Map({
           container: canvasRef.current,
           style: 'https://tiles.openfreemap.org/styles/positron',
