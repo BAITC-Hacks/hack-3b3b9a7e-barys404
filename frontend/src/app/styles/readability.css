@@ -272,7 +272,7 @@ small {
     display: block;
     font-size: var(--font-small);
     font-weight: 500;
-    color: #607970;
+    color: var(--tone-muted, #607970);
     margin-bottom: 4px;
   }
   .hospital-row .row-chevron {

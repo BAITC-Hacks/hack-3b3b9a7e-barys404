@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { useEffect, useRef } from 'react'
 import { type AdminAccount } from '../../../shared/api/types'
 
@@ -23,7 +24,7 @@ export function AccountConfirmation({
     return () => node?.close()
   }, [])
   const deleting = action === 'delete'
-  const verb = deleting ? 'Удалить' : account.active ? 'Заблокировать' : 'Разблокировать'
+  const verb = deleting ? t('Удалить') : account.active ? t('Заблокировать') : t('Разблокировать')
   return (
     <dialog
       ref={dialog}
@@ -34,32 +35,44 @@ export function AccountConfirmation({
         if (!busy) cancel()
       }}
     >
-      <span className="section-kicker">УПРАВЛЕНИЕ ДОСТУПОМ</span>
-      <h2 id="account-confirmation-title">{verb} аккаунт?</h2>
+      <span className="section-kicker">{t('УПРАВЛЕНИЕ ДОСТУПОМ')}</span>
+      <h2 id="account-confirmation-title">
+        {t(
+          deleting
+            ? 'Удалить аккаунт?'
+            : account.active
+              ? 'Заблокировать аккаунт?'
+              : 'Разблокировать аккаунт?',
+        )}
+      </h2>
       <strong>{account.display_name}</strong>
       <p className="admin-confirmation-login">{account.login}</p>
       <p>
         {deleting
-          ? 'Аккаунт будет удалён без возможности восстановления. Данные больниц и модели останутся без изменений.'
+          ? t(
+              'Аккаунт будет удалён без возможности восстановления. Данные больниц и модели останутся без изменений.',
+            )
           : account.active
-            ? 'Пользователь будет выведен из кабинета и не сможет войти, пока вы не снимете блокировку.'
-            : 'Пользователь снова сможет войти с прежним паролем и своей ролью.'}
+            ? t(
+                'Пользователь будет выведен из кабинета и не сможет войти, пока вы не снимете блокировку.',
+              )
+            : t('Пользователь снова сможет войти с прежним паролем и своей ролью.')}
       </p>
       {error && (
         <p className="admin-warning" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
       <div className="admin-confirmation-actions">
         <button autoFocus className="secondary-button" disabled={busy} onClick={cancel}>
-          Отмена
+          {t('Отмена')}{' '}
         </button>
         <button
           className={`primary-button ${deleting ? 'admin-delete-confirm' : ''}`}
           disabled={busy}
           onClick={confirm}
         >
-          {busy ? 'Сохраняем…' : verb}
+          {busy ? t('Сохраняем…') : verb}
         </button>
       </div>
     </dialog>

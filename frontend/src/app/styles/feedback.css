@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   gap: 13px;
-  color: #81a39b;
+  color: var(--tone-muted, #81a39b);
   font-size: 0.875rem;
   font-weight: 700;
 }
@@ -13,7 +13,7 @@
 .spinner {
   width: 23px;
   height: 23px;
-  border: 2px solid #d4e8df;
+  border: 2px solid var(--tone-border, #d4e8df);
   border-top-color: #33a592;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -36,9 +36,9 @@
 }
 
 .message-error {
-  background: #fff2ef;
-  color: #ad6c5b;
-  border: 1px solid #f5d7ce;
+  background: var(--tone-error-soft, #fff2ef);
+  color: var(--tone-error, #ad6c5b);
+  border: 1px solid var(--tone-error-border, #f5d7ce);
 }
 
 .empty-state {
@@ -48,13 +48,13 @@
   align-items: center;
   text-align: center;
   min-height: 230px;
-  color: #607970;
+  color: var(--tone-muted, #607970);
   padding: 25px;
 }
 
 .empty-state h3 {
   font-size: 14px;
-  color: #55796e;
+  color: var(--tone-muted, #55796e);
   margin: 12px 0 5px;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .boot-error p {
-  color: #78948a;
+  color: var(--tone-muted, #78948a);
   font-size: 0.875rem;
 }
 

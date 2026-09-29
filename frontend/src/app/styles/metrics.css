@@ -6,8 +6,8 @@
 }
 
 .metric-card {
-  background: #fff;
-  border: 1px solid #e4eeeb;
+  background: var(--tone-surface, #fff);
+  border: 1px solid var(--tone-border, #e4eeeb);
   border-radius: 16px;
   padding: 20px 21px 18px;
   min-height: 151px;
@@ -36,11 +36,11 @@
   gap: 10px;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #607970;
+  color: var(--tone-muted, #607970);
 }
 
 .metric-top svg {
-  color: #4baaa0;
+  color: var(--tone-accent, #4baaa0);
 }
 
 .metric-accent .metric-top,
@@ -52,7 +52,7 @@
   font-size: 29px;
   line-height: 1.2;
   letter-spacing: -0.045em;
-  color: #1c4748;
+  color: var(--tone-ink, #1c4748);
   font-weight: 800;
   margin: 26px 0 3px;
   white-space: nowrap;
@@ -67,7 +67,7 @@
   letter-spacing: 0;
   font-weight: 700;
   margin-left: 5px;
-  color: #819b96;
+  color: var(--tone-muted, #819b96);
 }
 
 .metric-accent .metric-value small {
@@ -76,7 +76,7 @@
 
 .metric-note {
   font-size: 0.875rem;
-  color: #607970;
+  color: var(--tone-muted, #607970);
   font-weight: 600;
 }
 

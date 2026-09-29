@@ -12,7 +12,7 @@
 }
 
 .panel {
-  background: #fff;
+  background: var(--tone-surface, #fff);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 24px;
@@ -42,7 +42,7 @@
 .forecast-summary p,
 .data-intro p {
   font-size: 0.875rem;
-  color: #607970;
+  color: var(--tone-muted, #607970);
   line-height: 1.6;
   margin: 0;
 }
@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #75908a;
+  color: var(--tone-muted, #75908a);
   font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;

@@ -3,18 +3,18 @@
   align-items: flex-start;
   gap: 12px;
   padding: 17px 20px;
-  background: #eaf4f1;
-  border: 1px solid #d2e7df;
+  background: var(--tone-soft, #eaf4f1);
+  border: 1px solid var(--tone-border, #d2e7df);
   border-radius: 12px;
   margin: 18px 0;
-  color: #355d56;
+  color: var(--tone-ink, #355d56);
   font-size: 0.9rem;
   line-height: 1.65;
 }
 
 .workspace-note svg {
   margin-top: 3px;
-  color: #218c7c;
+  color: var(--tone-accent, #218c7c);
 }
 
 .workspace-actions {
@@ -29,17 +29,17 @@
   display: grid;
   gap: 7px;
   font-size: 0.875rem;
-  color: #55736b;
+  color: var(--tone-muted, #55736b);
   font-weight: 650;
   max-width: 100%;
 }
 
 .briefing-question select {
-  border: 1px solid #d6e5df;
+  border: 1px solid var(--tone-border, #d6e5df);
   border-radius: 9px;
   padding: 10px 12px;
-  background: #fff;
-  color: #214d45;
+  background: var(--tone-surface, #fff);
+  color: var(--tone-ink, #214d45);
   min-width: 0;
   max-width: 100%;
 }
@@ -56,7 +56,7 @@
 .evidence-section > p,
 .briefing-preview > p {
   line-height: 1.7;
-  color: #5b746c;
+  color: var(--tone-muted, #5b746c);
   font-size: 0.9rem;
 }
 
@@ -77,12 +77,12 @@
   text-align: left;
   vertical-align: top;
   padding: 13px 15px;
-  border-bottom: 1px solid #e3ece7;
+  border-bottom: 1px solid var(--tone-border, #e3ece7);
 }
 
 .evidence-table thead {
-  background: #edf5f1;
-  color: #4f7065;
+  background: var(--tone-soft, #edf5f1);
+  color: var(--tone-muted, #4f7065);
 }
 
 .evidence-table tbody th {
@@ -97,15 +97,15 @@
 }
 
 .evidence-table tbody tr:nth-child(even) {
-  background: #f9fcfa;
+  background: var(--tone-raised, #f9fcfa);
 }
 
 .briefing-preview {
   padding: 18px;
   margin: 20px 0;
-  border: 1px solid #c9e0d5;
+  border: 1px solid var(--tone-border, #c9e0d5);
   border-radius: 12px;
-  background: #f7fbf8;
+  background: var(--tone-raised, #f7fbf8);
 }
 
 .briefing-preview h3 {
@@ -119,8 +119,8 @@
   line-height: 1.65;
   font-size: 0.9rem;
   font-weight: 650;
-  color: #255b48;
-  border-top: 1px solid #d6e6dd;
+  color: var(--tone-ink, #255b48);
+  border-top: 1px solid var(--tone-border, #d6e6dd);
   padding-top: 17px;
   margin-top: 17px;
 }

@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Activity, ArrowRight, Clock3 } from 'lucide-react'
 import { useId, useState } from 'react'
 import { type View } from '../../../shared/config/navigation'
@@ -17,17 +18,17 @@ export function ForecastsPage({ hospital, go }: { hospital: string; go: (view: V
     <>
       <PageHeading
         eyebrow=""
-        title={tab === 'flow' ? 'Прогноз направлений' : 'Оценка ожидания'}
-        description={`${hospital ? `Стационар: ${hospital}. ` : ''}${
+        title={tab === 'flow' ? t('Прогноз направлений') : t('Оценка ожидания')}
+        description={`${hospital ? `${t('Стационар: {hospital}.', { hospital })} ` : ''}${
           tab === 'flow'
-            ? 'Сколько направлений может поступить за следующие семь дней после конца данных.'
-            : 'Оценка срока от регистрации направления до госпитализации по историческим данным.'
+            ? t('Сколько направлений может поступить за следующие семь дней после конца данных.')
+            : t('Оценка срока от регистрации направления до госпитализации по историческим данным.')
         }`}
       />
       <div
         className="tab-bar sliding-tabs"
         role="tablist"
-        aria-label="Тип прогноза"
+        aria-label={t('Тип прогноза')}
         ref={trackRef}
         onKeyDown={(event) => {
           if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
@@ -55,7 +56,7 @@ export function ForecastsPage({ hospital, go }: { hospital: string; go: (view: V
           className={tab === 'flow' ? 'active' : ''}
           onClick={() => setTab('flow')}
         >
-          <Activity size={17} /> Поток направлений
+          <Activity size={17} /> {t('Поток направлений')}{' '}
         </button>
         <button
           role="tab"
@@ -67,7 +68,7 @@ export function ForecastsPage({ hospital, go }: { hospital: string; go: (view: V
           className={tab === 'wait' ? 'active' : ''}
           onClick={() => setTab('wait')}
         >
-          <Clock3 size={17} /> Время ожидания
+          <Clock3 size={17} /> {t('Время ожидания')}{' '}
         </button>
       </div>
       <div ref={tabEntrance} role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`}>
@@ -79,14 +80,14 @@ export function ForecastsPage({ hospital, go }: { hospital: string; go: (view: V
           )
         ) : (
           <EmptyState
-            title="Стационар не выбран"
-            text="Откройте список стационаров и выберите организацию."
+            title={t('Стационар не выбран')}
+            text={t('Откройте список стационаров и выберите организацию.')}
           />
         )}
       </div>
       <div className="workspace-actions">
         <button className="secondary-button" onClick={() => go('hospital')}>
-          Карточка и PDF-сводка <ArrowRight size={16} />
+          {t('Карточка и PDF-сводка')} <ArrowRight size={16} />
         </button>
       </div>
     </>

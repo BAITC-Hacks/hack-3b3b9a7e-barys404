@@ -8,7 +8,7 @@
 
 .eyebrow,
 .section-kicker {
-  color: #148f82;
+  color: var(--tone-accent, #148f82);
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -25,7 +25,7 @@
 }
 
 .page-heading p {
-  color: #607970;
+  color: var(--tone-muted, #607970);
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.65;
@@ -38,9 +38,9 @@
   align-items: center;
   gap: 10px;
   padding: 10px 13px;
-  border: 1px solid #e1ece8;
-  background: #fff;
-  color: #548279;
+  border: 1px solid var(--tone-border, #e1ece8);
+  background: var(--tone-surface, #fff);
+  color: var(--tone-muted, #548279);
   border-radius: 9px;
   font-size: 0.875rem;
   font-weight: 500;

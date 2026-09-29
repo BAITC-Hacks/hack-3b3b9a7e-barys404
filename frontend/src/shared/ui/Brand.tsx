@@ -1,4 +1,5 @@
 import { Activity } from 'lucide-react'
+import { t } from '../lib/i18n'
 
 export function Brand() {
   return (
@@ -8,7 +9,7 @@ export function Brand() {
       </span>
       <span>
         MedFlow<span>AI</span>
-        <small>Госпитальная аналитика</small>
+        <small>{t('Госпитальная аналитика')}</small>
       </span>
     </a>
   )

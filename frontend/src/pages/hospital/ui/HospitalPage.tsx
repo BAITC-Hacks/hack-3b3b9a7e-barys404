@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { type Filters, type HospitalDetail, type Overview } from '../../../shared/api/types'
 import { type Mode, type View } from '../../../shared/config/navigation'
 import { useRemote } from '../../../shared/lib/useRemote'
@@ -34,22 +35,22 @@ export function HospitalPage({
     <>
       {mode === 'government' && (
         <button className="back-link" onClick={() => go('hospitals')}>
-          <ArrowLeft size={16} /> К списку стационаров
+          <ArrowLeft size={16} /> {t('К списку стационаров')}{' '}
         </button>
       )}
       <PageHeading
-        eyebrow="КАРТОЧКА СТАЦИОНАРА"
+        eyebrow={t('КАРТОЧКА СТАЦИОНАРА')}
         title={hospital}
-        description="Наблюдаемые показатели по выбранному периоду и профилю."
+        description={t('Наблюдаемые показатели по выбранному периоду и профилю.')}
         action={
           <div className="heading-actions">
             {mode === 'government' && (
               <button className="secondary-button" onClick={compare}>
-                Сравнить
+                {t('Сравнить')}{' '}
               </button>
             )}
             <button className="secondary-button" onClick={() => go('forecasts')}>
-              Открыть прогноз <ArrowRight size={16} />
+              {t('Открыть прогноз')} <ArrowRight size={16} />
             </button>
           </div>
         }
@@ -59,39 +60,39 @@ export function HospitalPage({
       {trend.error && <ErrorState message={trend.error} />}
       {detail.data && !stats && (
         <EmptyState
-          title="Нет записей для выбранных фильтров"
-          text="Измените период, регион или профиль, чтобы увидеть показатели стационара."
+          title={t('Нет записей для выбранных фильтров')}
+          text={t('Измените период, регион или профиль, чтобы увидеть показатели стационара.')}
         />
       )}
       {stats && (
         <>
           <div className="metrics-grid">
             <MetricCard
-              label="Направления"
+              label={t('Направления')}
               value={number(stats.referrals)}
-              note="За выбранный период"
+              note={t('За выбранный период')}
               icon={Activity}
               tone="accent"
             />
             <MetricCard
-              label="Медиана ожидания"
+              label={t('Медиана ожидания')}
               value={decimal(stats.median_wait_days)}
-              suffix="дня"
-              note="По завершённым случаям"
+              suffix={t('дня')}
+              note={t('По завершённым случаям')}
               icon={Clock3}
             />
             <MetricCard
-              label="90% ожидали до"
+              label={t('90% ожидали до')}
               value={decimal(stats.p90_wait_days)}
-              suffix="дня"
-              note="Наблюдаемый P90"
+              suffix={t('дня')}
+              note={t('Наблюдаемый P90')}
               icon={TrendingUp}
             />
             <MetricCard
-              label="Доля отказов"
+              label={t('Доля отказов')}
               value={decimal(stats.refusal_share_pct)}
               suffix="%"
-              note="Среди известных исходов"
+              note={t('Среди известных исходов')}
               icon={Info}
             />
           </div>
@@ -99,9 +100,9 @@ export function HospitalPage({
             <section className="panel">
               <div className="panel-heading">
                 <div>
-                  <span className="section-kicker">ПОСТУПЛЕНИЕ</span>
-                  <h2>Направления по неделям</h2>
-                  <p>История выбранного стационара</p>
+                  <span className="section-kicker">{t('ПОСТУПЛЕНИЕ')}</span>
+                  <h2>{t('Направления по неделям')}</h2>
+                  <p>{t('История выбранного стационара')}</p>
                 </div>
               </div>
               {trend.data && (
@@ -113,15 +114,17 @@ export function HospitalPage({
             <section className="panel">
               <div className="panel-heading">
                 <div>
-                  <span className="section-kicker">ПРОФИЛИ</span>
-                  <h2>Что поступает чаще</h2>
-                  <p>Восемь наиболее частых профилей</p>
+                  <span className="section-kicker">{t('ПРОФИЛИ')}</span>
+                  <h2>{t('Что поступает чаще')}</h2>
+                  <p>{t('Восемь наиболее частых профилей')}</p>
                 </div>
               </div>
               <div className="profile-list">
                 {(detail.data?.profiles ?? []).map((profile) => (
                   <div className="profile-row" key={profile.profile}>
-                    <span>{profile.profile === '__MISSING__' ? 'Не указан' : profile.profile}</span>
+                    <span>
+                      {profile.profile === '__MISSING__' ? t('Не указан') : t(profile.profile)}
+                    </span>
                     <strong>{number(profile.referrals)}</strong>
                   </div>
                 ))}
@@ -130,20 +133,22 @@ export function HospitalPage({
           </div>
           <section className="panel pathway-panel">
             <div>
-              <span className="section-kicker">ПРОГНОЗ</span>
-              <h2>Что ожидается дальше?</h2>
+              <span className="section-kicker">{t('ПРОГНОЗ')}</span>
+              <h2>{t('Что ожидается дальше?')}</h2>
               <p>
-                Для этого стационара можно посмотреть прогноз входящих направлений на семь дней
-                после последней даты в данных.
+                {t(
+                  'Для этого стационара можно посмотреть прогноз входящих направлений на семь дней после последней даты в данных.',
+                )}{' '}
               </p>
             </div>
             <button className="primary-button" onClick={() => go('forecasts')}>
-              Показать прогноз <ArrowRight size={17} />
+              {t('Показать прогноз')} <ArrowRight size={17} />
             </button>
           </section>
           <p className="page-note">
-            P90 — наблюдённый срок у 90% завершённых случаев, а не доверительный интервал. Фильтры
-            выше не меняют обученную модель прогноза.
+            {t(
+              'P90 — наблюдённый срок у 90% завершённых случаев, а не доверительный интервал. Фильтры выше не меняют обученную модель прогноза.',
+            )}{' '}
           </p>
           <BriefingPanel filters={filters} hospitals={[hospital]} minimum={10} />
         </>

@@ -1,3 +1,5 @@
+import { DisplayPreferences } from '../../../shared/ui/DisplayPreferences'
+import { t } from '../../../shared/lib/i18n'
 import { ArrowRight, ChevronLeft, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { post } from '../../../shared/api/client'
@@ -30,53 +32,56 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
       <div className="login-story">
         <Brand />
         <div>
-          <h2>Рабочий кабинет</h2>
-          <p>Платформа откроет разделы, доступные вашей учётной записи.</p>
+          <h2>{t('Рабочий кабинет')}</h2>
+          <p>{t('Платформа откроет разделы, доступные вашей учётной записи.')}</p>
           <dl className="login-scopes">
             <div>
-              <dt>Больница</dt>
-              <dd>Направления и прогнозы своей организации</dd>
+              <dt>{t('Больница')}</dt>
+              <dd>{t('Направления и прогнозы своей организации')}</dd>
             </div>
             <div>
-              <dt>Госорган</dt>
-              <dd>Общий обзор и сравнение стационаров</dd>
+              <dt>{t('Госорган')}</dt>
+              <dd>{t('Общий обзор и сравнение стационаров')}</dd>
             </div>
             <div>
-              <dt>Администратор</dt>
-              <dd>Аккаунты сотрудников и состояние системы</dd>
+              <dt>{t('Администратор')}</dt>
+              <dd>{t('Аккаунты сотрудников и состояние системы')}</dd>
             </div>
           </dl>
         </div>
         <span className="login-security">
-          <ShieldCheck size={19} /> Доступ к данным ограничен ролью и организацией
+          <ShieldCheck size={19} /> {t('Доступ к данным ограничен ролью и организацией')}{' '}
         </span>
       </div>
       <main className="login-main">
+        <div className="login-preferences">
+          <DisplayPreferences />
+        </div>
         <a className="back-link" href="#welcome">
-          <ChevronLeft size={16} /> О платформе
+          <ChevronLeft size={16} /> {t('О платформе')}{' '}
         </a>
         <div className="login-form-card" ref={entrance}>
-          <h1>Вход в кабинет</h1>
-          <p>Используйте учётную запись, выданную администратором.</p>
+          <h1>{t('Вход в кабинет')}</h1>
+          <p>{t('Используйте учётную запись, выданную администратором.')}</p>
           {notice && (
             <div className="auth-notice" role="status">
-              {notice}
+              {t(notice)}
             </div>
           )}
           <form onSubmit={submit}>
             <label>
-              Логин
+              {t('Логин')}{' '}
               <input
                 autoComplete="username"
                 required
                 maxLength={120}
                 value={login}
                 onChange={(event) => setLogin(event.target.value)}
-                placeholder="Ваш логин"
+                placeholder={t('Ваш логин')}
               />
             </label>
             <label>
-              Пароль
+              {t('Пароль')}{' '}
               <span className="password-input">
                 <input
                   type={show ? 'text' : 'password'}
@@ -85,12 +90,12 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
                   maxLength={128}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Введите пароль"
+                  placeholder={t('Введите пароль')}
                 />
                 <button
                   type="button"
                   onClick={() => setShow(!show)}
-                  aria-label={show ? 'Скрыть пароль' : 'Показать пароль'}
+                  aria-label={show ? t('Скрыть пароль') : t('Показать пароль')}
                   aria-pressed={show}
                 >
                   {show ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -99,20 +104,24 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
             </label>
             {error && (
               <div className="message message-error" role="alert">
-                {error}
+                {t(error)}
               </div>
             )}
             <button className="primary-button" disabled={busy}>
-              {busy ? 'Входим…' : 'Войти в кабинет'}
+              {busy ? t('Входим…') : t('Войти в кабинет')}
               <ArrowRight size={17} />
             </button>
           </form>
           <div className="login-help">
-            <strong>Нет доступа или забыли пароль?</strong>
-            <p>Обратитесь к администратору платформы для получения или восстановления доступа.</p>
+            <strong>{t('Нет доступа или забыли пароль?')}</strong>
+            <p>
+              {t('Обратитесь к администратору платформы для получения или восстановления доступа.')}
+            </p>
           </div>
         </div>
-        <small className="login-caption">MedFlow AI · Аналитика на исторических данных</small>
+        <small className="login-caption">
+          {t('MedFlow AI · Аналитика на исторических данных')}
+        </small>
       </main>
     </div>
   )

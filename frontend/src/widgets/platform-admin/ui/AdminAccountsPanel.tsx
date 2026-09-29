@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Ban, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import { post } from '../../../shared/api/client'
@@ -27,7 +28,7 @@ export function AdminAccountsPanel({ user }: { user: User }) {
   } | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState<{ key: string; login: string } | null>(null)
   const pageSize = 50
   const { data, loading, error } = useRemote<AdminAccounts>(
     `/admin/users${query({ search: search.applied, role, status, offset, limit: pageSize, refresh: revision })}`,
@@ -39,7 +40,7 @@ export function AdminAccountsPanel({ user }: { user: User }) {
   }
   const chooseAction = (account: AdminAccount, action: 'access' | 'delete') => {
     setActionError('')
-    setNotice('')
+    setNotice(null)
     setConfirmation({ account, action })
   }
   const confirm = async () => {
@@ -53,11 +54,15 @@ export function AdminAccountsPanel({ user }: { user: User }) {
         action === 'delete' ? { login: account.login } : { active: !account.active },
       )
       setConfirmation(null)
-      setNotice(
-        action === 'delete'
-          ? `Аккаунт ${account.login} удалён.`
-          : `Аккаунт ${account.login} ${account.active ? 'заблокирован' : 'разблокирован'}.`,
-      )
+      setNotice({
+        key:
+          action === 'delete'
+            ? 'Аккаунт {login} удалён.'
+            : account.active
+              ? 'Аккаунт {login} заблокирован.'
+              : 'Аккаунт {login} разблокирован.',
+        login: account.login,
+      })
       refresh()
     } catch (reason) {
       setActionError(reason instanceof Error ? reason.message : 'Не удалось выполнить действие.')
@@ -69,13 +74,17 @@ export function AdminAccountsPanel({ user }: { user: User }) {
     <>
       {data && (
         <div className="admin-metrics" ref={metrics}>
-          <MetricCard label="Всего аккаунтов" value={number(data.summary.total)} icon={Users} />
           <MetricCard
-            label="Доступ открыт"
+            label={t('Всего аккаунтов')}
+            value={number(data.summary.total)}
+            icon={Users}
+          />
+          <MetricCard
+            label={t('Доступ открыт')}
             value={number(data.summary.active)}
             icon={ShieldCheck}
           />
-          <MetricCard label="Заблокированы" value={number(data.summary.blocked)} icon={Ban} />
+          <MetricCard label={t('Заблокированы')} value={number(data.summary.blocked)} icon={Ban} />
         </div>
       )}
       <section className="panel admin-accounts">
@@ -91,11 +100,11 @@ export function AdminAccountsPanel({ user }: { user: User }) {
               search.clear()
               setOffset(0)
             }}
-            placeholder="Логин, имя или организация"
-            label="Поиск аккаунта"
+            placeholder={t('Логин, имя или организация')}
+            label={t('Поиск аккаунта')}
           />
           <label>
-            Роль
+            {t('Роль')}{' '}
             <select
               value={role}
               onChange={(event) => {
@@ -103,14 +112,14 @@ export function AdminAccountsPanel({ user }: { user: User }) {
                 setOffset(0)
               }}
             >
-              <option value="">Все роли</option>
-              <option value="government_analyst">Аналитик госоргана</option>
-              <option value="hospital_analyst">Сотрудник больницы</option>
-              <option value="platform_admin">Администратор</option>
+              <option value="">{t('Все роли')}</option>
+              <option value="government_analyst">{t('Аналитик госоргана')}</option>
+              <option value="hospital_analyst">{t('Сотрудник больницы')}</option>
+              <option value="platform_admin">{t('Администратор')}</option>
             </select>
           </label>
           <label>
-            Доступ
+            {t('Доступ')}{' '}
             <select
               value={status}
               onChange={(event) => {
@@ -118,40 +127,40 @@ export function AdminAccountsPanel({ user }: { user: User }) {
                 setOffset(0)
               }}
             >
-              <option value="">Все аккаунты</option>
-              <option value="active">Открыт</option>
-              <option value="blocked">Заблокирован</option>
+              <option value="">{t('Все аккаунты')}</option>
+              <option value="active">{t('Открыт')}</option>
+              <option value="blocked">{t('Заблокирован')}</option>
             </select>
           </label>
           <button
             className="secondary-button"
             onClick={refresh}
             disabled={loading || busy}
-            aria-label="Обновить аккаунты"
+            aria-label={t('Обновить аккаунты')}
           >
-            <RefreshCw size={17} /> Обновить
+            <RefreshCw size={17} /> {t('Обновить')}{' '}
           </button>
         </div>
         {notice && (
           <p className="admin-notice" role="status">
-            {notice}
+            {t(notice.key, { login: notice.login })}
           </p>
         )}
         {loading && <Loading />}
-        {error && <ErrorState message={error} />}
+        {error && <ErrorState message={t(error)} />}
         {data &&
           (data.items.length ? (
             <>
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                  <caption className="admin-sr-only">Аккаунты сотрудников</caption>
+                  <caption className="admin-sr-only">{t('Аккаунты сотрудников')}</caption>
                   <thead>
                     <tr>
-                      <th>Аккаунт</th>
-                      <th>Роль</th>
-                      <th>Организация</th>
-                      <th>Доступ</th>
-                      <th>Действия</th>
+                      <th>{t('Аккаунт')}</th>
+                      <th>{t('Роль')}</th>
+                      <th>{t('Организация')}</th>
+                      <th>{t('Доступ')}</th>
+                      <th>{t('Действия')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -159,52 +168,59 @@ export function AdminAccountsPanel({ user }: { user: User }) {
                       const self = account.id === user.id
                       return (
                         <tr key={account.id}>
-                          <td data-label="Аккаунт">
+                          <td data-label={t('Аккаунт')}>
                             <strong>{account.display_name}</strong>
                             <small>
                               {account.login}
-                              {self ? ' · Ваш аккаунт' : ''}
+                              {self ? t(' · Ваш аккаунт') : ''}
                             </small>
                           </td>
-                          <td data-label="Роль">{roleLabel(account.role)}</td>
-                          <td data-label="Организация" className="admin-organization">
+                          <td data-label={t('Роль')}>{roleLabel(account.role)}</td>
+                          <td data-label={t('Организация')} className="admin-organization">
                             {account.role === 'government_analyst'
-                              ? 'Все больницы'
+                              ? t('Все больницы')
                               : account.role === 'platform_admin'
-                                ? 'Управление платформой'
-                                : account.hospital_name || 'Организация не назначена'}
+                                ? t('Управление платформой')
+                                : account.hospital_name || t('Организация не назначена')}
                             {account.role === 'hospital_analyst' &&
                               !account.organization_active && (
-                                <small className="admin-warning">Организация недоступна</small>
+                                <small className="admin-warning">
+                                  {t('Организация недоступна')}
+                                </small>
                               )}
                           </td>
-                          <td data-label="Доступ">
+                          <td data-label={t('Доступ')}>
                             <span
                               className={`admin-status ${account.active ? 'is-active' : 'is-blocked'}`}
                             >
-                              {account.active ? 'Открыт' : 'Заблокирован'}
+                              {account.active ? t('Открыт') : t('Заблокирован')}
                             </span>
                           </td>
-                          <td data-label="Действия">
+                          <td data-label={t('Действия')}>
                             <div className="admin-row-actions">
                               <button
                                 className="admin-action"
                                 disabled={self || busy}
-                                title={self ? 'Нельзя заблокировать свой аккаунт' : undefined}
-                                aria-label={`${account.active ? 'Заблокировать' : 'Разблокировать'} ${account.login}`}
+                                title={self ? t('Нельзя заблокировать свой аккаунт') : undefined}
+                                aria-label={t(
+                                  account.active
+                                    ? 'Заблокировать {login}'
+                                    : 'Разблокировать {login}',
+                                  { login: account.login },
+                                )}
                                 onClick={() => chooseAction(account, 'access')}
                               >
                                 {account.active ? <Ban size={16} /> : <ShieldCheck size={16} />}{' '}
-                                {account.active ? 'Блокировать' : 'Разблокировать'}
+                                {account.active ? t('Блокировать') : t('Разблокировать')}
                               </button>
                               <button
                                 className="admin-action admin-danger"
                                 disabled={self || busy}
-                                title={self ? 'Нельзя удалить свой аккаунт' : undefined}
-                                aria-label={`Удалить ${account.login}`}
+                                title={self ? t('Нельзя удалить свой аккаунт') : undefined}
+                                aria-label={t('Удалить {login}', { login: account.login })}
                                 onClick={() => chooseAction(account, 'delete')}
                               >
-                                <Trash2 size={16} /> Удалить
+                                <Trash2 size={16} /> {t('Удалить')}{' '}
                               </button>
                             </div>
                           </td>
@@ -216,28 +232,32 @@ export function AdminAccountsPanel({ user }: { user: User }) {
               </div>
               <div className="directory-pagination">
                 <span>
-                  {offset + 1}–{offset + data.items.length} из {number(data.total)}
+                  {t('{start}–{end} из {total}', {
+                    start: number(offset + 1),
+                    end: number(offset + data.items.length),
+                    total: number(data.total),
+                  })}
                 </span>
                 <div>
                   <button
                     disabled={offset === 0 || busy}
                     onClick={() => setOffset(Math.max(0, offset - pageSize))}
                   >
-                    Назад
+                    {t('Назад')}{' '}
                   </button>
                   <button
                     disabled={offset + pageSize >= data.total || busy}
                     onClick={() => setOffset(offset + pageSize)}
                   >
-                    Далее
+                    {t('Далее')}{' '}
                   </button>
                 </div>
               </div>
             </>
           ) : (
             <EmptyState
-              title="Аккаунты не найдены"
-              text="Измените поиск, роль или статус доступа."
+              title={t('Аккаунты не найдены')}
+              text={t('Измените поиск, роль или статус доступа.')}
             />
           ))}
       </section>

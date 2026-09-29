@@ -18,6 +18,7 @@ import { HospitalPage } from '../pages/hospital/index'
 import { HospitalsPage } from '../pages/hospitals/index'
 import { OverviewPage } from '../pages/overview/index'
 import { currentRoute, NAV, type Mode, type NavItem, type View } from './navigation'
+import { t } from '../shared/lib/i18n'
 
 export function Workspace({ user, logout }: { user: User; logout: () => Promise<void> }) {
   const boot = useRemote<Bootstrap>('/bootstrap')
@@ -101,12 +102,12 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
         <button
           className="mobile-overlay"
           onClick={() => setMenuOpen(false)}
-          aria-label="Закрыть меню"
+          aria-label={t('Закрыть меню')}
         />
       )}
       <div className="workspace">
         <WorkspaceHeader
-          title={activeView === 'hospital' ? 'Карточка стационара' : title}
+          title={t(activeView === 'hospital' ? 'Карточка стационара' : title)}
           period={filters.start ? { start: filters.start, end: filters.end } : boot.data?.period}
           user={user}
           logout={logout}
@@ -117,7 +118,9 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
         ) : boot.error ? (
           <div className="boot-error">
             <ErrorState message={boot.error} />
-            <p>Проверьте, что API запущен и подготовленные данные находятся в папке проекта.</p>
+            <p>
+              {t('Проверьте, что API запущен и подготовленные данные находятся в папке проекта.')}
+            </p>
           </div>
         ) : (
           boot.data &&
@@ -127,14 +130,14 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                 <div className="hospital-context">
                   <Building2 size={18} />
                   <div className="assigned-hospital">
-                    <span className="context-label">ВАША ОРГАНИЗАЦИЯ</span>
+                    <span className="context-label">{t('ВАША ОРГАНИЗАЦИЯ')}</span>
                     <strong>{user.hospital_name}</strong>
                   </div>
                 </div>
               )}
               {mode === 'government' && activeView === 'forecasts' && (
                 <div className="hospital-context">
-                  <span className="context-label">Стационар</span>
+                  <span className="context-label">{t('Стационар')}</span>
                   <HospitalChooser
                     hospital={hospital}
                     hospitals={boot.data.hospitals}

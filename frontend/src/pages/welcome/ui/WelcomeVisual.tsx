@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Activity, Clock3, ShieldCheck, TrendingUp } from 'lucide-react'
 import { useId } from 'react'
 import { useEntrance } from '../../../shared/lib/useEntrance'
@@ -6,35 +7,35 @@ export function WelcomeVisual() {
   const id = useId()
   const reveal = useEntrance<SVGRectElement>(undefined, 'draw')
   return (
-    <div className="welcome-visual" aria-label="Иллюстрация аналитического кабинета">
+    <div className="welcome-visual" aria-label={t('Иллюстрация аналитического кабинета')}>
       <div className="visual-top">
         <span>
-          <i /> MedFlow · Обзор
+          <i /> {t('MedFlow · Обзор')}{' '}
         </span>
-        <span>Иллюстрация</span>
+        <span>{t('Иллюстрация')}</span>
       </div>
-      <div className="visual-heading">Направления и ожидание</div>
+      <div className="visual-heading">{t('Направления и ожидание')}</div>
       <div className="visual-metrics">
         <span>
           <Activity size={18} />
-          <small>Направления</small>
-          <b>Динамика потока</b>
+          <small>{t('Направления')}</small>
+          <b>{t('Динамика потока')}</b>
         </span>
         <span>
           <Clock3 size={18} />
-          <small>Ожидание</small>
-          <b>История и оценка</b>
+          <small>{t('Ожидание')}</small>
+          <b>{t('История и оценка')}</b>
         </span>
       </div>
       <div className="visual-chart">
         <div>
-          <span>Поступление направлений</span>
+          <span>{t('Поступление направлений')}</span>
           <TrendingUp size={17} />
         </div>
         <svg
           viewBox="0 0 460 150"
           role="img"
-          aria-label="Условный график потока, не реальные данные"
+          aria-label={t('Условный график потока, не реальные данные')}
         >
           <defs>
             <clipPath id={`${id}-reveal`}>
@@ -60,10 +61,10 @@ export function WelcomeVisual() {
             />
           </g>
         </svg>
-        <small>История → тенденции → прогноз</small>
+        <small>{t('История → тенденции → прогноз')}</small>
       </div>
       <div className="visual-bottom">
-        <ShieldCheck size={16} /> Каждый сотрудник видит разрешённые ему данные
+        <ShieldCheck size={16} /> {t('Каждый сотрудник видит разрешённые ему данные')}{' '}
       </div>
     </div>
   )

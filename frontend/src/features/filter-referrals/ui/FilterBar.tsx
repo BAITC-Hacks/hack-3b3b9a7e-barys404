@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { ArrowRight, CalendarDays, X } from 'lucide-react'
 import { type Bootstrap, type Filters } from '../../../shared/api/types'
 import { regionLabel } from '../../../entities/region/index'
@@ -28,11 +29,11 @@ export function FilterBar({
     <div className="filter-bar">
       <fieldset className="filter-period">
         <legend>
-          <CalendarDays size={15} aria-hidden="true" /> Период регистрации
+          <CalendarDays size={15} aria-hidden="true" /> {t('Период регистрации')}{' '}
         </legend>
         <div className="date-range-control">
           <label className="date-range-field">
-            <span>С</span>
+            <span>{t('С')}</span>
             <input
               type="date"
               min={bootstrap.period.start}
@@ -43,7 +44,7 @@ export function FilterBar({
           </label>
           <ArrowRight size={14} className="date-range-separator" aria-hidden="true" />
           <label className="date-range-field">
-            <span>По</span>
+            <span>{t('По')}</span>
             <input
               type="date"
               min={bootstrap.period.start}
@@ -55,13 +56,13 @@ export function FilterBar({
         </div>
       </fieldset>
       <label className="filter-select">
-        Регион происхождения{' '}
+        {t('Регион происхождения')}{' '}
         <select
           value={filters.region}
           title={regionLabel(filters.region)}
           onChange={(event) => set('region', event.target.value)}
         >
-          <option value="">Все регионы</option>
+          <option value="">{t('Все регионы')}</option>
           {bootstrap.regions.map((region) => (
             <option key={region} value={region}>
               {regionLabel(region)}
@@ -70,12 +71,12 @@ export function FilterBar({
         </select>
       </label>
       <label className="filter-select">
-        Профиль{' '}
+        {t('Профиль')}{' '}
         <select value={filters.profile} onChange={(event) => set('profile', event.target.value)}>
-          <option value="">Все профили</option>
+          <option value="">{t('Все профили')}</option>
           {bootstrap.profiles.map((profile) => (
             <option key={profile} value={profile}>
-              {profile}
+              {t(profile)}
             </option>
           ))}
         </select>
@@ -83,11 +84,11 @@ export function FilterBar({
       <button
         className="reset-button"
         onClick={reset}
-        title="Сбросить фильтры"
-        aria-label="Сбросить фильтры"
+        title={t('Сбросить фильтры')}
+        aria-label={t('Сбросить фильтры')}
       >
         <X size={17} />
-        <span>Сбросить</span>
+        <span>{t('Сбросить')}</span>
       </button>
     </div>
   )

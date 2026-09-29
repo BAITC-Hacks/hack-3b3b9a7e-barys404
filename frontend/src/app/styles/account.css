@@ -22,7 +22,7 @@
 
 .user-menu small {
   font-size: 0.875rem;
-  color: #607970;
+  color: var(--tone-muted, #607970);
 }
 
 .user-menu .icon-button {
@@ -35,10 +35,10 @@
   top: 100%;
   margin-top: 8px;
   padding: 10px;
-  background: #fff2ef;
-  border: 1px solid #f5d7ce;
+  background: var(--tone-error-soft, #fff2ef);
+  border: 1px solid var(--tone-error-border, #f5d7ce);
   border-radius: 8px;
-  color: #ad6c5b;
+  color: var(--tone-error, #ad6c5b);
   font-size: 0.875rem;
   white-space: nowrap;
 }
@@ -59,8 +59,8 @@
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  background: linear-gradient(110deg, #e5f4ed, #f8fcfa);
-  border: 1px solid #d6e9df;
+  background: linear-gradient(110deg, var(--tone-raised, #e5f4ed), var(--tone-raised, #f8fcfa));
+  border: 1px solid var(--tone-border, #d6e9df);
   border-radius: 13px;
   padding: 20px 23px;
   margin-bottom: 22px;
@@ -73,7 +73,7 @@
 
 .onboarding p {
   font-size: 0.875rem;
-  color: #607970;
+  color: var(--tone-muted, #607970);
   line-height: 1.6;
   margin-bottom: 6px;
 }

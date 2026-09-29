@@ -2,6 +2,8 @@ import { CalendarDays, ChevronRight, Menu } from 'lucide-react'
 import { type Bootstrap, type User } from '../../../shared/api/types'
 import { day } from '../../../shared/lib/format'
 import { UserMenu } from '../../../entities/user/index'
+import { DisplayPreferences } from '../../../shared/ui/DisplayPreferences'
+import { t } from '../../../shared/lib/i18n'
 
 export function WorkspaceHeader({
   title,
@@ -18,19 +20,20 @@ export function WorkspaceHeader({
 }) {
   return (
     <header className="topbar">
-      <button className="mobile-menu icon-button" onClick={openMenu} aria-label="Открыть меню">
+      <button className="mobile-menu icon-button" onClick={openMenu} aria-label={t('Открыть меню')}>
         <Menu size={22} />
       </button>
       <div className="breadcrumbs">
         <span>MedFlow AI</span>
         <ChevronRight size={15} />
-        <strong>{title}</strong>
+        <strong>{t(title)}</strong>
       </div>
       <div className="topbar-actions">
         <span className="period-chip">
           <CalendarDays size={15} />{' '}
-          {period ? `${day(period.start)} — ${day(period.end)}` : 'Данные'}
+          {period ? `${day(period.start)} — ${day(period.end)}` : t('Данные')}
         </span>
+        <DisplayPreferences />
         <UserMenu user={user} logout={logout} />
       </div>
     </header>

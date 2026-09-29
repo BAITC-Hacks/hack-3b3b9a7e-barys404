@@ -1,17 +1,17 @@
 .icon-button {
   display: grid;
   place-items: center;
-  border: 1px solid #e0ebe7;
-  background: #fff;
-  color: #5f8782;
+  border: 1px solid var(--tone-border, #e0ebe7);
+  background: var(--tone-surface, #fff);
+  color: var(--tone-muted, #5f8782);
   border-radius: 9px;
   width: 36px;
   height: 36px;
 }
 
 .icon-button:hover {
-  color: #13796d;
-  background: #eff8f5;
+  color: var(--tone-accent, #13796d);
+  background: var(--tone-soft, #eff8f5);
 }
 
 .reset-button {

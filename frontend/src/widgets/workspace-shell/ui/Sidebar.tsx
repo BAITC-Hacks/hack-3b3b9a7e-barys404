@@ -1,5 +1,6 @@
 import { Activity } from 'lucide-react'
 import { type Mode, type NavItem, type View } from '../../../shared/config/navigation'
+import { t } from '../../../shared/lib/i18n'
 
 export function Sidebar({
   open,
@@ -26,11 +27,11 @@ export function Sidebar({
           <strong>
             MedFlow<span>AI</span>
           </strong>
-          <small>Госпитальная аналитика</small>
+          <small>{t('Госпитальная аналитика')}</small>
         </div>
       </div>
       <div className="sidebar-divider" aria-hidden="true" />
-      <nav aria-label="Основная навигация">
+      <nav aria-label={t('Основная навигация')}>
         {items.map((item) => {
           const Icon = item.icon
           const active =
@@ -44,7 +45,7 @@ export function Sidebar({
               onClick={() => (item.id === 'hospital' ? onHospital() : navigate(item.id))}
             >
               <Icon size={19} strokeWidth={1.8} />
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
               {active && <span className="nav-indicator" />}
             </button>
           )
@@ -52,9 +53,9 @@ export function Sidebar({
       </nav>
       <div className="sidebar-bottom">
         <div className="sidebar-live">
-          <span /> Локальное демо
+          <span /> {t('Локальное демо')}
         </div>
-        <p>Исторические данные · 2025</p>
+        <p>{t('Исторические данные · 2025')}</p>
       </div>
     </aside>
   )

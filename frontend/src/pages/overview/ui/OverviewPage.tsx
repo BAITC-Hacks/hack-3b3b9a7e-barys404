@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { ArrowRight } from 'lucide-react'
 import { query } from '../../../entities/hospital/index'
 import {
@@ -44,9 +45,9 @@ export function OverviewPage({
   const top = useRemote<{
     items: MetricRow[]
   }>(mode === 'government' ? `/hospitals${query({ ...filters, limit: 5 })}` : null)
-  const title = mode === 'hospital' ? 'Обзор больницы' : 'Обзор направлений'
+  const title = mode === 'hospital' ? t('Обзор больницы') : t('Обзор направлений')
   const description =
-    mode === 'hospital' ? hospital : 'Поступление направлений и результаты госпитализации.'
+    mode === 'hospital' ? hospital : t('Поступление направлений и результаты госпитализации.')
   return (
     <>
       <PageHeading
@@ -54,18 +55,18 @@ export function OverviewPage({
         title={title}
         description={
           filters.region
-            ? `${description} Регион происхождения: ${regionLabel(filters.region)}.`
+            ? `${description} ${t('Регион происхождения: {region}.', { region: regionLabel(filters.region) })}`
             : description
         }
-        action={<span className="overview-source">Исторические данные · 2025</span>}
+        action={<span className="overview-source">{t('Исторические данные · 2025')}</span>}
       />
       <FilterBar filters={filters} setFilters={setFilters} bootstrap={bootstrap} />
       {loading && <Loading />}
       {error && <ErrorState message={error} />}
       {data && data.stats.referrals === 0 && (
         <EmptyState
-          title="По этим фильтрам записей нет"
-          text="Выберите другой регион или профиль либо сбросьте фильтры над обзором."
+          title={t('По этим фильтрам записей нет')}
+          text={t('Выберите другой регион или профиль либо сбросьте фильтры над обзором.')}
         />
       )}
       {data && data.stats.referrals > 0 && (
@@ -84,13 +85,14 @@ export function OverviewPage({
               />
             ) : (
               <section className="panel next-panel">
-                <h2>Карточка больницы</h2>
+                <h2>{t('Карточка больницы')}</h2>
                 <p>
-                  Профили направлений, наблюдаемое ожидание и прогноз входящего потока находятся в
-                  одной карточке.
+                  {t(
+                    'Профили направлений, наблюдаемое ожидание и прогноз входящего потока находятся в одной карточке.',
+                  )}{' '}
                 </p>
                 <button className="primary-button" onClick={() => openHospital(hospital)}>
-                  Открыть карточку <ArrowRight size={17} />
+                  {t('Открыть карточку')} <ArrowRight size={17} />
                 </button>
               </section>
             )}

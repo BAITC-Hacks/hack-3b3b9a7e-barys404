@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import { usePreferences } from './preferences'
 
 export function useSlidingIndicator<T extends HTMLElement>(value: string) {
+  const { language } = usePreferences()
   const trackRef = useRef<T>(null)
   const indicatorRef = useRef<HTMLSpanElement>(null)
   const animation = useRef<Animation | null>(null)
@@ -40,7 +42,7 @@ export function useSlidingIndicator<T extends HTMLElement>(value: string) {
   }, [])
   useLayoutEffect(() => {
     place(true)
-  }, [value, place])
+  }, [value, language, place])
   useEffect(() => {
     const track = trackRef.current
     if (!track) return

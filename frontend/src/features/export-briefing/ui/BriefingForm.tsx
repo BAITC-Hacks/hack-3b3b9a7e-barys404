@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Download } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { post, postPdf } from '../../../shared/api/client'
@@ -61,7 +62,7 @@ export function BriefingForm({ request }: { request: BriefingInput }) {
             void run(false)
           }}
         >
-          {busy ? 'Подготовка…' : preview ? 'Обновить просмотр' : 'Подготовить просмотр'}
+          {busy ? t('Подготовка…') : preview ? t('Обновить просмотр') : t('Подготовить просмотр')}
         </button>
       </div>
       <ErrorBox text={error} />
@@ -73,7 +74,7 @@ export function BriefingForm({ request }: { request: BriefingInput }) {
           void run(true)
         }}
       >
-        <Download size={17} /> Скачать PDF-сводку
+        <Download size={17} /> {t('Скачать PDF-сводку')}{' '}
       </button>
     </>
   )

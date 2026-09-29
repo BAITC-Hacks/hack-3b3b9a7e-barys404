@@ -11,7 +11,7 @@
 
 .selection-count {
   font-size: 0.875rem;
-  color: #86a09a;
+  color: var(--tone-muted, #86a09a);
   font-weight: 800;
 }
 
@@ -28,14 +28,14 @@
   padding: 11px 8px;
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #587773;
+  color: var(--tone-muted, #587773);
   font-weight: 600;
   line-height: 1.35;
   cursor: pointer;
 }
 
 .compare-option:hover {
-  background: #f5faf7;
+  background: var(--tone-raised, #f5faf7);
 }
 
 .compare-option input {
@@ -52,7 +52,7 @@
 .custom-check {
   width: 17px;
   height: 17px;
-  border: 1px solid #bed0ca;
+  border: 1px solid var(--tone-border, #bed0ca);
   border-radius: 5px;
   display: grid;
   place-items: center;
@@ -67,7 +67,7 @@
 }
 
 .compare-option input:focus-visible + .custom-check {
-  outline: 3px solid #a1dcd3;
+  outline: 3px solid var(--tone-border, #a1dcd3);
 }
 
 .compare-option input:disabled ~ span {
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 9px;
   min-width: 0;
-  color: #456b66;
+  color: var(--tone-muted, #456b66);
   font-size: 0.875rem;
   font-weight: 700;
 }
@@ -107,8 +107,8 @@
   width: 24px;
   height: 24px;
   border-radius: 7px;
-  color: #197d72;
-  background: #e2f3ed;
+  color: var(--tone-accent, #197d72);
+  background: var(--tone-soft, #e2f3ed);
   flex-shrink: 0;
 }
 
@@ -121,7 +121,7 @@
 .compare-track {
   height: 20px;
   border-radius: 6px;
-  background: #f0f5f2;
+  background: var(--tone-raised, #f0f5f2);
   overflow: hidden;
 }
 
@@ -135,7 +135,7 @@
 
 .compare-bar-row strong {
   text-align: right;
-  color: #255c56;
+  color: var(--tone-ink, #255c56);
   font-size: 0.875rem;
 }
 
@@ -146,17 +146,17 @@
 }
 
 .compare-card {
-  background: #f7faf8;
-  border: 1px solid #e6efeb;
+  background: var(--tone-raised, #f7faf8);
+  border: 1px solid var(--tone-border, #e6efeb);
   border-radius: 10px;
   text-align: left;
   padding: 15px;
-  color: #597a74;
+  color: var(--tone-muted, #597a74);
 }
 
 .compare-card:hover {
-  border-color: #96d1c5;
-  background: #f1f9f5;
+  border-color: var(--tone-border, #96d1c5);
+  background: var(--tone-soft, #f1f9f5);
 }
 
 .compare-card span {
@@ -170,11 +170,11 @@
 .compare-card strong {
   display: block;
   font-size: 20px;
-  color: #295d56;
+  color: var(--tone-ink, #295d56);
   margin: 13px 0 4px;
 }
 
 .compare-card small {
   font-size: 0.875rem;
-  color: #607970;
+  color: var(--tone-muted, #607970);
 }

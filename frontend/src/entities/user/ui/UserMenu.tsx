@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { type User } from '../../../shared/api/types'
@@ -15,8 +16,8 @@ export function UserMenu({ user, logout }: { user: User; logout: () => Promise<v
       <button
         className="icon-button"
         disabled={busy}
-        title="Выйти"
-        aria-label="Выйти из аккаунта"
+        title={t('Выйти')}
+        aria-label={t('Выйти из аккаунта')}
         onClick={async () => {
           setBusy(true)
           setError('')
@@ -30,7 +31,7 @@ export function UserMenu({ user, logout }: { user: User; logout: () => Promise<v
       >
         <LogOut size={17} />
       </button>
-      {error && <span role="alert">{error}</span>}
+      {error && <span role="alert">{t(error)}</span>}
     </div>
   )
 }

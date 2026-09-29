@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Activity, Building2, Clock3, TrendingUp } from 'lucide-react'
 import type { Overview } from '../../../shared/api/types'
 import { decimal, number } from '../../../shared/lib/format'
@@ -9,29 +10,29 @@ export function OverviewMetrics({ data }: { data: Overview }) {
   return (
     <div className="metrics-grid overview-metrics" ref={entrance}>
       <MetricCard
-        label="Направления"
+        label={t('Направления')}
         value={number(data.stats.referrals)}
-        note="Зарегистрировано за период"
+        note={t('Зарегистрировано за период')}
         icon={Activity}
         tone="accent"
       />
       <MetricCard
-        label="Стационары"
+        label={t('Стационары')}
         value={number(data.stats.hospitals)}
-        note="С направлениями в выборке"
+        note={t('С направлениями в выборке')}
         icon={Building2}
       />
       <MetricCard
-        label="Медиана ожидания"
+        label={t('Медиана ожидания')}
         value={decimal(data.stats.median_wait)}
-        suffix="дня"
-        note="По завершённым госпитализациям"
+        suffix={t('дня')}
+        note={t('По завершённым госпитализациям')}
         icon={Clock3}
       />
       <MetricCard
-        label="Госпитализации"
+        label={t('Госпитализации')}
         value={number(data.stats.hospitalized)}
-        note="С известным исходом"
+        note={t('С известным исходом')}
         icon={TrendingUp}
       />
     </div>

@@ -143,7 +143,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 10px 0;
-  border-top: 1px solid #eff3f0;
+  border-top: 1px solid var(--tone-border, #eff3f0);
   font-size: 0.875rem;
   color: var(--muted);
 }
@@ -153,11 +153,11 @@
 }
 
 .positive {
-  color: #d2835c;
+  color: var(--tone-warning, #d2835c);
 }
 
 .negative {
-  color: #249380;
+  color: var(--tone-accent, #249380);
 }
 
 .result-placeholder {

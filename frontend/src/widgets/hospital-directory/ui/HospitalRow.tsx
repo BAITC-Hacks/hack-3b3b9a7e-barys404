@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Building2, ChevronRight } from 'lucide-react'
 import { type MetricRow } from '../../../shared/api/types'
 import { decimal, number } from '../../../shared/lib/format'
@@ -22,11 +23,11 @@ export function HospitalRow({
         </span>
         <span>{hospitalDisplayName(row.organization_or_region)}</span>
       </span>
-      <span className="hospital-cell numeric-cell" data-label="Направления">
+      <span className="hospital-cell numeric-cell" data-label={t('Направления')}>
         {number(row.referrals)}
       </span>
-      <span className="hospital-cell numeric-cell" data-label="Ожидание">
-        {decimal(row.median_wait_days)} <small>дн.</small>
+      <span className="hospital-cell numeric-cell" data-label={t('Ожидание')}>
+        {decimal(row.median_wait_days)} <small>{t('дн.')}</small>
       </span>
       <span className="hospital-cell numeric-cell">
         {decimal(row.refusal_share_pct)}

@@ -22,14 +22,14 @@
 }
 
 .secondary-button {
-  background: #fff;
-  color: #217b73;
-  border-color: #d6e8e2;
+  background: var(--tone-surface, #fff);
+  color: var(--tone-accent, #217b73);
+  border-color: var(--tone-border, #d6e8e2);
   box-shadow: none;
 }
 
 .secondary-button:hover {
-  background: #eff8f5;
+  background: var(--tone-soft, #eff8f5);
 }
 
 .heading-actions {

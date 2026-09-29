@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useRemote } from '../../../shared/lib/useRemote'
@@ -18,31 +19,31 @@ export function AdminSystemPanel() {
     <section className="panel admin-system">
       <div className="admin-system-heading">
         <div>
-          <h2>Данные и модели</h2>
+          <h2>{t('Данные и модели')}</h2>
         </div>
         <button
           className="secondary-button"
           disabled={loading}
           onClick={() => setRevision((value) => value + 1)}
         >
-          <RefreshCw size={17} /> Обновить
+          <RefreshCw size={17} /> {t('Обновить')}{' '}
         </button>
       </div>
       {loading && <Loading />}
-      {error && <ErrorState message={error} />}
+      {error && <ErrorState message={t(error)} />}
       {data && (
         <div className="admin-system-grid">
           <article>
-            <h3>Данные</h3>
+            <h3>{t('Данные')}</h3>
             <span className={`admin-status ${data.data.ready ? 'is-active' : 'is-blocked'}`}>
-              {data.data.ready ? 'Готовы' : 'Не подготовлены'}
+              {data.data.ready ? t('Готовы') : t('Не подготовлены')}
             </span>
-            <p>Подготовленная история для аналитики.</p>
+            <p>{t('Подготовленная история для аналитики.')}</p>
           </article>
           {(
             [
-              ['Ожидание', data.waiting, 'дня'],
-              ['Поток направлений', data.flow, 'напр. в день'],
+              [t('Ожидание'), data.waiting, t('дня')],
+              [t('Поток направлений'), data.flow, t('напр. в день')],
             ] as const
           ).map(([title, model, unit]) => (
             <article key={title}>
@@ -50,12 +51,15 @@ export function AdminSystemPanel() {
               <span
                 className={`admin-status ${model.status.available ? 'is-active' : 'is-blocked'}`}
               >
-                {model.status.available ? 'Готова' : 'Недоступна'}
+                {model.status.available ? t('Готова') : t('Недоступна')}
               </span>
               <p>
                 {model.status.available
-                  ? `Ошибка на исторической проверке: ${decimal(model.metrics.mae, 2)} ${unit}.`
-                  : model.status.reason || 'Проверьте артефакты модели.'}
+                  ? t('Ошибка на исторической проверке: {error} {unit}.', {
+                      error: decimal(model.metrics.mae, 2),
+                      unit,
+                    })
+                  : t(model.status.reason || 'Проверьте артефакты модели.')}
               </p>
             </article>
           ))}

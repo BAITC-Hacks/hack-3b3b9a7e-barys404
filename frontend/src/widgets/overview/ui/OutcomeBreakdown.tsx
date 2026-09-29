@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import type { Overview } from '../../../shared/api/types'
 import { number } from '../../../shared/lib/format'
 import { useStaggeredEntrance } from '../../../shared/lib/useEntrance'
@@ -7,15 +8,15 @@ export function OutcomeBreakdown({ stats }: { stats: Overview['stats'] }) {
     <section className="panel outcome-panel">
       <div className="panel-heading">
         <div>
-          <h2>Исходы направлений</h2>
-          <p>По записям в выгрузке</p>
+          <h2>{t('Исходы направлений')}</h2>
+          <p>{t('По записям в выгрузке')}</p>
         </div>
       </div>
       <div className="outcome-stack" ref={bars}>
         {[
-          ['Госпитализации', stats.hospitalized, 'teal'],
-          ['Отказы', stats.refused, 'coral'],
-          ['Исход не записан', stats.unresolved, 'gray'],
+          [t('Госпитализации'), stats.hospitalized, 'teal'],
+          [t('Отказы'), stats.refused, 'coral'],
+          [t('Исход не записан'), stats.unresolved, 'gray'],
         ].map(([label, value, color]) => (
           <div className="outcome-row" key={String(label)}>
             <span>{label}</span>
@@ -32,7 +33,7 @@ export function OutcomeBreakdown({ stats }: { stats: Overview['stats'] }) {
         ))}
       </div>
       <p className="panel-footnote">
-        Отсутствие исхода в выгрузке не означает, что человек ожидает сейчас.
+        {t('Отсутствие исхода в выгрузке не означает, что человек ожидает сейчас.')}{' '}
       </p>
     </section>
   )

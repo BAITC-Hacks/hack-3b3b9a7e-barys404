@@ -1,4 +1,5 @@
 import { Search, X } from 'lucide-react'
+import { t } from '../lib/i18n'
 
 export function SearchForm({
   value,
@@ -20,7 +21,7 @@ export function SearchForm({
   return (
     <form
       role="search"
-      aria-label={label}
+      aria-label={t(label)}
       className={`search-field ${className}`.trim()}
       onSubmit={(event) => {
         event.preventDefault()
@@ -31,15 +32,15 @@ export function SearchForm({
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        aria-label={label}
+        placeholder={t(placeholder)}
+        aria-label={t(label)}
       />
       {value && (
-        <button type="button" onClick={onClear} aria-label="Очистить поиск">
+        <button type="button" onClick={onClear} aria-label={t('Очистить поиск')}>
           <X size={16} />
         </button>
       )}
-      <button type="submit" className="search-submit" aria-label="Найти" title="Найти">
+      <button type="submit" className="search-submit" aria-label={t('Найти')} title={t('Найти')}>
         <Search size={19} aria-hidden="true" />
       </button>
     </form>

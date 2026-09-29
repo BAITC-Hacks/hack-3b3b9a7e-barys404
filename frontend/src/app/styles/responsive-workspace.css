@@ -239,7 +239,7 @@
   .filter-bar {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: #fff;
+    background: var(--tone-surface, #fff);
   }
 }
 
@@ -247,10 +247,10 @@
   .metric-card,
   .panel,
   .filter-bar {
-    border-color: #779e93;
+    border-color: var(--tone-border, #779e93);
   }
   .topbar {
-    background: #fff;
+    background: var(--tone-surface, #fff);
   }
   .nav-link {
     color: #fff;

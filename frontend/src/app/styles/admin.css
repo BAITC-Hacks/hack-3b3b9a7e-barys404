@@ -28,7 +28,7 @@
 }
 .admin-navigation button[aria-pressed='true'] {
   color: var(--accent);
-  background: #fff;
+  background: var(--tone-surface, #fff);
   box-shadow: none;
 }
 .admin-navigation button:active,
@@ -174,12 +174,12 @@
   white-space: nowrap;
 }
 .admin-status.is-active {
-  color: #146755;
+  color: var(--tone-accent, #146755);
   background: var(--accent-soft);
 }
 .admin-status.is-blocked {
-  color: #8d4137;
-  background: #fbece7;
+  color: var(--tone-error, #8d4137);
+  background: var(--tone-error-soft, #fbece7);
 }
 .admin-row-actions {
   display: flex;
@@ -195,7 +195,7 @@
   border: 1px solid var(--line);
   border-radius: 0.5rem;
   min-height: 44px;
-  background: #fff;
+  background: var(--tone-surface, #fff);
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 500;
@@ -206,13 +206,13 @@
 .admin-action.admin-danger,
 .admin-warning,
 .admin-table td small.admin-warning {
-  color: #a64436;
+  color: var(--tone-error, #a64436);
 }
 .admin-notice {
   margin: 0 1.3rem 1rem;
   padding: 0.75rem;
   border-radius: 0.6rem;
-  color: #146755;
+  color: var(--tone-accent, #146755);
   background: var(--accent-soft);
 }
 .admin-confirmation {
@@ -234,7 +234,7 @@
   line-height: 1.6;
 }
 .admin-confirmation .admin-warning {
-  color: #a64436;
+  color: var(--tone-error, #a64436);
 }
 .admin-confirmation-login {
   margin-top: 0.3rem;

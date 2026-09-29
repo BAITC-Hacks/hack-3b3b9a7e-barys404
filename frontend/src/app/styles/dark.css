@@ -1,0 +1,54 @@
+/* Scoped exceptions for browser-native controls and floating surfaces. */
+:root[data-theme='dark'] .topbar {
+  background: rgba(24, 36, 45, 0.94);
+}
+
+:root[data-theme='dark'] .brand-mark {
+  color: #102c28;
+}
+
+:root[data-theme='dark'] .date-range-field input[type='date'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] .admin-confirmation {
+  background: var(--surface);
+}
+
+:root[data-theme='dark'] .search-field:focus-within {
+  border-color: var(--accent);
+}
+
+:root[data-theme='dark'] .compare-option input:focus-visible + .custom-check {
+  outline-color: var(--accent);
+}
+
+:root[data-theme='dark'] input::placeholder,
+:root[data-theme='dark'] textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+:root[data-theme='dark'] .chart-legend i {
+  background: var(--chart-observed);
+}
+
+:root[data-theme='dark'] .chart-legend span:nth-child(2) i {
+  background: var(--chart-forecast);
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root[data-theme='dark'] .topbar {
+    background: var(--surface);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .nav-link {
+    color: var(--ink);
+  }
+  .nav-active,
+  .nav-active:hover {
+    color: var(--accent);
+  }
+}

@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --surface: #ffffff;
   --canvas: #f6f7f9;
   --ink: #202a32;
@@ -19,4 +20,36 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Existing light colors remain the fallbacks in component styles. Dark mode
+   remaps those semantic roles without inverting charts or changing status colors. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: #18242d;
+  --canvas: #10191f;
+  --ink: #e5edf1;
+  --muted: #a8b9c3;
+  --line: #354650;
+  --accent: #73d7c5;
+  --accent-soft: #203d3b;
+  --tone-ink: var(--ink);
+  --tone-muted: var(--muted);
+  --tone-accent: var(--accent);
+  --tone-surface: var(--surface);
+  --tone-raised: #21313a;
+  --tone-soft: var(--accent-soft);
+  --tone-border: var(--line);
+  --tone-error: #ffb8a8;
+  --tone-error-soft: #432d2b;
+  --tone-error-border: #805148;
+  --tone-warning: #f2b28f;
+  --chart-observed: #73d7c5;
+  --chart-forecast: #9fbee8;
+  --chart-forecast-bg: #20333e;
+  --chart-guide: #7894a4;
+  --chart-point-border: #18242d;
+  --chart-tooltip-bg: #263c49;
+  --chart-tooltip-muted: #c0d1dc;
+  --chart-tooltip-ink: #f4f8fa;
 }

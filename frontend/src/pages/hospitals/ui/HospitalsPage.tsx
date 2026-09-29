@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { useEffect, useState } from 'react'
 import { query } from '../../../entities/hospital/index'
 import { type Filters, type MetricRow } from '../../../shared/api/types'
@@ -30,9 +31,9 @@ export function HospitalsPage({
   return (
     <>
       <PageHeading
-        eyebrow="СТАЦИОНАРЫ"
-        title="Найдите нужную больницу"
-        description="Откройте организацию, чтобы увидеть её профиль, исходы и прогноз."
+        eyebrow={t('СТАЦИОНАРЫ')}
+        title={t('Найдите нужную больницу')}
+        description={t('Откройте организацию, чтобы увидеть её профиль, исходы и прогноз.')}
       />
       <section className="panel directory-panel">
         <div className="directory-toolbar">
@@ -47,25 +48,25 @@ export function HospitalsPage({
               search.clear()
               setOffset(0)
             }}
-            placeholder="Название стационара"
-            label="Поиск стационара"
+            placeholder={t('Название стационара')}
+            label={t('Поиск стационара')}
           />
-          <span className="result-count">{data ? organizations(data.total) : 'Поиск'}</span>
+          <span className="result-count">{data ? organizations(data.total) : t('Поиск')}</span>
         </div>
         {(filters.region || filters.profile) && (
           <div className="directory-filter-note">
-            Список ограничен фильтрами:{' '}
-            {[filters.region ? regionLabel(filters.region) : '', filters.profile]
+            {t('Список ограничен фильтрами:')}{' '}
+            {[filters.region ? regionLabel(filters.region) : '', t(filters.profile)]
               .filter(Boolean)
               .join(' · ')}
-            . Сбросить их можно кнопкой выше.
+            {t('. Сбросить их можно кнопкой выше.')}{' '}
           </div>
         )}
         <div className="table-head hospital-table-head">
-          <span>Стационар</span>
-          <span>Направления</span>
-          <span>Ожидание</span>
-          <span>Отказы</span>
+          <span>{t('Стационар')}</span>
+          <span>{t('Направления')}</span>
+          <span>{t('Ожидание')}</span>
+          <span>{t('Отказы')}</span>
           <span />
         </div>
         {loading && <Loading />}
@@ -78,34 +79,39 @@ export function HospitalsPage({
               ))}
               <div className="directory-pagination">
                 <span>
-                  Показаны {offset + 1}–{offset + data.items.length} из {data.total}
+                  {t('Показаны {start}–{end} из {total}', {
+                    start: offset + 1,
+                    end: offset + data.items.length,
+                    total: data.total,
+                  })}
                 </span>
                 <div>
                   <button
                     disabled={offset === 0}
                     onClick={() => setOffset(Math.max(0, offset - pageSize))}
                   >
-                    Назад
+                    {t('Назад')}{' '}
                   </button>
                   <button
                     disabled={offset + pageSize >= data.total}
                     onClick={() => setOffset(offset + pageSize)}
                   >
-                    Далее
+                    {t('Далее')}{' '}
                   </button>
                 </div>
               </div>
             </>
           ) : (
             <EmptyState
-              title="Стационары не найдены"
-              text="Попробуйте другое название или сбросьте фильтры."
+              title={t('Стационары не найдены')}
+              text={t('Попробуйте другое название или сбросьте фильтры.')}
             />
           ))}
       </section>
       <p className="page-note">
-        Медиана показана только при достаточном числе завершённых госпитализаций. Доля отказов
-        считается среди известных исходов.
+        {t(
+          'Медиана показана только при достаточном числе завершённых госпитализаций. Доля отказов считается среди известных исходов.',
+        )}{' '}
       </p>
     </>
   )

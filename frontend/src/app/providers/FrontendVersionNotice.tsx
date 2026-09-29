@@ -1,3 +1,4 @@
+import { t } from '../../shared/lib/i18n'
 import { useEffect, useState } from 'react'
 import { get } from '../../shared/api/client'
 
@@ -46,14 +47,16 @@ export function FrontendVersionNotice() {
   }, [])
   if (!outdated) return null
   return (
-    <aside className="frontend-version-notice" aria-label="Обновление интерфейса">
-      <span role="status">Доступна новая версия интерфейса. Завершите ввод перед обновлением.</span>
+    <aside className="frontend-version-notice" aria-label={t('Обновление интерфейса')}>
+      <span role="status">
+        {t('Доступна новая версия интерфейса. Завершите ввод перед обновлением.')}
+      </span>
       <button
         className="secondary-button"
-        title="Обновление сбросит выбранные параметры страницы"
+        title={t('Обновление сбросит выбранные параметры страницы')}
         onClick={() => window.location.reload()}
       >
-        Обновить страницу
+        {t('Обновить страницу')}{' '}
       </button>
     </aside>
   )

@@ -1,3 +1,5 @@
+import { DisplayPreferences } from '../../../shared/ui/DisplayPreferences'
+import { t } from '../../../shared/lib/i18n'
 import { Server, Users } from 'lucide-react'
 import { useState } from 'react'
 import { type User } from '../../../shared/api/types'
@@ -17,25 +19,26 @@ export function AdminPage({ user, logout }: { user: User; logout: () => Promise<
     <div className="admin-shell">
       <header className="topbar">
         <Brand />
+        <DisplayPreferences />
         <UserMenu user={user} logout={logout} />
       </header>
       <main className="content admin-content">
         <PageHeading
           eyebrow=""
-          title="Администрирование"
-          description="Аккаунты сотрудников и состояние системы."
+          title={t('Администрирование')}
+          description={t('Аккаунты сотрудников и состояние системы.')}
         />
         <nav
           className="admin-navigation sliding-tabs"
-          aria-label="Разделы администрирования"
+          aria-label={t('Разделы администрирования')}
           ref={trackRef}
         >
           <span className="tab-indicator" aria-hidden="true" ref={indicatorRef} />
           <button aria-pressed={section === 'accounts'} onClick={() => setSection('accounts')}>
-            <Users size={18} /> Аккаунты
+            <Users size={18} /> {t('Аккаунты')}{' '}
           </button>
           <button aria-pressed={section === 'system'} onClick={() => setSection('system')}>
-            <Server size={18} /> Система
+            <Server size={18} /> {t('Система')}{' '}
           </button>
         </nav>
         <div ref={entrance}>

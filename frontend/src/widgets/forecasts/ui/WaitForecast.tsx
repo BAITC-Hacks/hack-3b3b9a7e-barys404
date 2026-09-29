@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { ArrowRight, Clock3 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { post } from '../../../shared/api/client'
@@ -76,18 +77,18 @@ export function WaitForecast({ hospital }: { hospital: string }) {
       {data && (
         <div className="wait-layout">
           <section className="panel wait-form-panel">
-            <h2>Параметры направления</h2>
+            <h2>{t('Параметры направления')}</h2>
             <p>
               {data.method === 'catboost'
-                ? 'Заполните параметры и нажмите «Рассчитать ожидание».'
-                : 'Выберите профиль и нажмите «Рассчитать ожидание».'}
+                ? t('Заполните параметры и нажмите «Рассчитать ожидание».')
+                : t('Выберите профиль и нажмите «Рассчитать ожидание».')}
             </p>
             <form onSubmit={submit} className="wait-form">
               {WAIT_FIELDS.filter(
                 ([key]) => key === 'bed_profile' || data.method === 'catboost',
               ).map(([key, label]) => (
                 <label key={key} className={key === 'bed_profile' ? 'wait-profile' : undefined}>
-                  {label}
+                  {t(label)}
                   {key === 'icd10_ref_diag_code' ? (
                     <>
                       <input
@@ -104,28 +105,28 @@ export function WaitForecast({ hospital }: { hospital: string }) {
                     </>
                   ) : (
                     <select
-                      title={values[key] ?? ''}
+                      title={t(values[key] ?? '')}
                       value={values[key] ?? ''}
                       onChange={(event) => setField(key, event.target.value)}
                       required
                     >
                       {(data.options[key] ?? []).map((value) => (
                         <option key={value} value={value}>
-                          {value}
+                          {t(value)}
                         </option>
                       ))}
                     </select>
                   )}
                   {key === 'bed_profile' && (values[key]?.length ?? 0) > 48 && (
                     <span className="wait-selected-profile" aria-hidden="true">
-                      {values[key]}
+                      {t(values[key])}
                     </span>
                   )}
                 </label>
               ))}
               {data.method === 'catboost' && (
                 <label>
-                  Дата регистрации
+                  {t('Дата регистрации')}{' '}
                   <input
                     type="date"
                     value={values.registration_dt ?? ''}
@@ -137,7 +138,7 @@ export function WaitForecast({ hospital }: { hospital: string }) {
                 </label>
               )}
               <button className="primary-button full-button" disabled={busy || loading}>
-                {busy ? 'Рассчитываем…' : 'Рассчитать ожидание'} <ArrowRight size={17} />
+                {busy ? t('Рассчитываем…') : t('Рассчитать ожидание')} <ArrowRight size={17} />
               </button>
               {submitError && <ErrorState message={submitError} />}
             </form>
@@ -148,33 +149,38 @@ export function WaitForecast({ hospital }: { hospital: string }) {
                 <WaitEstimateCard result={result} />
                 {result.contributions.length > 0 ? (
                   <details className="panel forecast-details">
-                    <summary>Что повлияло на оценку</summary>
+                    <summary>{t('Что повлияло на оценку')}</summary>
                     <div className="contribution-list">
                       {result.contributions.slice(0, 6).map((item) => (
                         <div key={item.feature}>
-                          <span>{item.label}</span>
+                          <span>{t(item.label)}</span>
                           <strong className={item.contribution >= 0 ? 'positive' : 'negative'}>
                             {item.contribution >= 0 ? '+' : ''}
-                            {decimal(item.contribution, 2)} дн.
+                            {decimal(item.contribution, 2)} {t('дн.')}{' '}
                           </strong>
                         </div>
                       ))}
                     </div>
                     <p className="panel-footnote">
-                      Вклады показывают связи, найденные моделью, а не доказанные причины.
+                      {t(
+                        'Вклады показывают связи, найденные моделью, а не доказанные причины.',
+                      )}{' '}
                     </p>
                   </details>
                 ) : (
                   <details className="panel forecast-details">
-                    <summary>Как получена оценка</summary>
+                    <summary>{t('Как получена оценка')}</summary>
                     <p>{waitBasis(result.method)}</p>
                     <p>
-                      Использованы только исходы, известные до {day(result.training_cutoff)} — более
-                      поздние случаи оставлены для проверки.
+                      {t(
+                        'Использованы только исходы, известные до {date} — более поздние случаи оставлены для проверки.',
+                        { date: day(result.training_cutoff) },
+                      )}
                     </p>
                     <p className="panel-footnote">
-                      Диагноз, цель направления и дата не меняют групповую оценку. Для этого метода
-                      нет вкладов отдельных признаков.
+                      {t(
+                        'Диагноз, цель направления и дата не меняют групповую оценку. Для этого метода нет вкладов отдельных признаков.',
+                      )}{' '}
                     </p>
                   </details>
                 )}
@@ -184,11 +190,11 @@ export function WaitForecast({ hospital }: { hospital: string }) {
                 <span className="placeholder-icon">
                   <Clock3 size={22} />
                 </span>
-                <h2>{busy ? 'Рассчитываем ожидание…' : 'Оценка пока не рассчитана'}</h2>
+                <h2>{busy ? t('Рассчитываем ожидание…') : t('Оценка пока не рассчитана')}</h2>
                 <p>
                   {busy
-                    ? 'Результат появится здесь.'
-                    : 'Выберите параметры направления и запустите расчёт.'}
+                    ? t('Результат появится здесь.')
+                    : t('Выберите параметры направления и запустите расчёт.')}
                 </p>
               </section>
             )}

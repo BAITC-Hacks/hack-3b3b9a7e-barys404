@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Check } from 'lucide-react'
 import type { MetricRow } from '../../../shared/api/types'
 import { SearchForm } from '../../../shared/ui/SearchForm'
@@ -25,9 +26,9 @@ export function ComparePicker({
     <section className="panel compare-picker">
       <div className="panel-heading">
         <div>
-          <span className="section-kicker">ВЫБОР</span>
-          <h2>Организации</h2>
-          <p>До трёх стационаров</p>
+          <span className="section-kicker">{t('ВЫБОР')}</span>
+          <h2>{t('Организации')}</h2>
+          <p>{t('До трёх стационаров')}</p>
         </div>
         <span className="selection-count">{selected.length} / 3</span>
       </div>
@@ -37,12 +38,12 @@ export function ComparePicker({
         onSubmit={submitSearch}
         onClear={clearSearch}
         className="compare-search"
-        placeholder="Найти организацию"
-        label="Найти организацию для сравнения"
+        placeholder={t('Найти организацию')}
+        label={t('Найти организацию для сравнения')}
       />
       {loading && (
         <p className="panel-footnote" role="status">
-          Загружаем организации…
+          {t('Загружаем организации…')}{' '}
         </p>
       )}
       <div className="compare-options" aria-busy={loading}>

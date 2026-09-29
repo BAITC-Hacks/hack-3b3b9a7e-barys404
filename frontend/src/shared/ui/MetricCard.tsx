@@ -1,4 +1,5 @@
 import { Activity } from 'lucide-react'
+import { t } from '../lib/i18n'
 
 export function MetricCard({
   label,
@@ -18,14 +19,14 @@ export function MetricCard({
   return (
     <div className={`metric-card ${tone === 'accent' ? 'metric-accent' : ''}`}>
       <div className="metric-top">
-        <span>{label}</span>
+        <span>{t(label)}</span>
         <Icon size={18} strokeWidth={1.7} />
       </div>
       <div className="metric-value">
         {value}
-        <small>{suffix}</small>
+        <small>{suffix && t(suffix)}</small>
       </div>
-      {note && <div className="metric-note">{note}</div>}
+      {note && <div className="metric-note">{t(note)}</div>}
     </div>
   )
 }

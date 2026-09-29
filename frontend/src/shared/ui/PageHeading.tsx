@@ -1,3 +1,5 @@
+import { t } from '../lib/i18n'
+
 export function PageHeading({
   eyebrow,
   title,
@@ -12,9 +14,9 @@ export function PageHeading({
   return (
     <div className="page-heading">
       <div>
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-        <h1>{title}</h1>
-        <p>{description}</p>
+        {eyebrow && <div className="eyebrow">{t(eyebrow)}</div>}
+        <h1>{t(title)}</h1>
+        <p>{t(description)}</p>
       </div>
       {action}
     </div>

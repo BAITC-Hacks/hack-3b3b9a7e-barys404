@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { type WaitResult } from '../../../shared/api/types'
 import { decimal, number } from '../../../shared/lib/format'
 import { durationParts } from '../../../shared/lib/duration'
@@ -11,40 +12,51 @@ export function WaitEstimateCard({ result }: { result: WaitResult }) {
   return (
     <section className="result-hero" ref={entrance} role="status" aria-live="polite">
       <h2 className="result-title">
-        {available ? 'Типичное время ожидания' : 'Оценка недоступна'}
+        {available ? t('Типичное время ожидания') : t('Оценка недоступна')}
       </h2>
       <div
         className="result-number result-duration"
-        aria-label={available ? parts.map(({ value, unit }) => `${value} ${unit}`).join(' ') : '—'}
+        aria-label={
+          available
+            ? parts
+                .map(
+                  ({ value, unit }) =>
+                    `${typeof value === 'number' ? number(value) : value} ${t(unit)}`,
+                )
+                .join(' ')
+            : '—'
+        }
       >
         {available
           ? parts.map(({ value, unit }) => (
               <b key={unit}>
                 {typeof value === 'number' ? number(value) : value}
-                <span> {unit}</span>
+                <span> {t(unit)}</span>
               </b>
             ))
           : '—'}
       </div>
-      <p>Общий срок до госпитализации, не оставшееся время в очереди.</p>
+      <p>{t('Общий срок до госпитализации, не оставшееся время в очереди.')}</p>
       <div className="result-reference">
         {waitBasis(result.method)}
-        {result.support > 0 && <> · {number(result.support)} случаев</>}.{' '}
-        {result.method !== 'catboost' && 'Это групповая медиана, не индивидуальный срок.'}
+        {result.support > 0 && (
+          <>
+            {' '}
+            · {number(result.support)} {t('случаев')}
+          </>
+        )}
+        . {result.method !== 'catboost' && t('Это групповая медиана, не индивидуальный срок.')}
       </div>
       <div className="result-caveat">
-        {result.group_quality ? (
-          <>
-            Ошибка для этой больницы и профиля: {decimal(result.group_quality.mae, 1)} дня на{' '}
-            {number(result.group_quality.observations)} более поздних случаях.
-          </>
-        ) : (
-          <>
-            Общая ошибка на проверке: {decimal(result.mae, 2)} дня. Для этой группы отдельная ошибка
-            не оценена.
-          </>
-        )}{' '}
-        Это не дата госпитализации. Оценка не изменяет очередь и не назначает лечение.
+        {result.group_quality
+          ? t('Ошибка для этой больницы и профиля: {mae} дня на {count} более поздних случаях.', {
+              mae: decimal(result.group_quality.mae, 1),
+              count: number(result.group_quality.observations),
+            })
+          : t('Общая ошибка на проверке: {mae} дня. Для этой группы отдельная ошибка не оценена.', {
+              mae: decimal(result.mae, 2),
+            })}{' '}
+        {t('Это не дата госпитализации. Оценка не изменяет очередь и не назначает лечение.')}{' '}
       </div>
     </section>
   )

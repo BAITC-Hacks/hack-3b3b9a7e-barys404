@@ -3,6 +3,24 @@
 React + TypeScript + Vite. Entry: `src/main.tsx`. The FastAPI server serves `dist/`
 on port 8000. Development: `npm ci`, `npm run dev` (API proxy to port 8000).
 
+## Language and appearance
+
+The header offers Russian, Kazakh and English, plus a light/dark theme button.
+The same controls are available on sign-in and administration screens. Choices
+are saved locally in `medflow-display-preferences` and synchronize between tabs.
+Changing language does not remount the workspace or reset forms and filters.
+If browser storage is unavailable, preferences still work for the current visit.
+
+UI messages live in `shared/lib/messages/`. Use `t(source, parameters)` at render
+time; preserve Russian source keys in stored notices and module-level constants.
+Dates, numbers and region labels follow the selected language. Source hospital
+names and unmapped source categories remain unchanged, as do API identifiers and
+model inputs. Exported PDF summaries remain in Russian, with a visible notice.
+No external translation service receives hospital or account data.
+
+Theme variables are in `app/styles/theme.css`; `dark.css` contains the remaining
+scoped exceptions. Component colors keep the original light values as fallbacks.
+
 ## FSD boundaries
 
 Imports go down: `app → pages → widgets → features → entities → shared`.

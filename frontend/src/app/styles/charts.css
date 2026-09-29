@@ -13,12 +13,12 @@
 }
 
 .chart-grid {
-  stroke: #e9f0ee;
+  stroke: var(--tone-border, #e9f0ee);
   stroke-width: 1;
 }
 
 .chart-label {
   font-size: 0.875rem;
-  fill: #607970;
+  fill: var(--tone-muted, #607970);
   font-weight: 600;
 }

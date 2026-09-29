@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useId } from 'react'
 import { EmptyState } from './EmptyState'
 import { number, shortDay, day, decimal } from '../lib/format'
 import { useEntrance } from '../lib/useEntrance'
+import { t } from '../lib/i18n'
 
 export function TrendChart({
   rows,
@@ -53,7 +54,7 @@ export function TrendChart({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="График направлений по датам"
+        aria-label={t('График направлений по датам')}
         onMouseLeave={() => setActive(null)}
       >
         <defs>
@@ -97,7 +98,7 @@ export function TrendChart({
             y={top}
             width={width - right - x(Math.max(0, forecastFrom - 1))}
             height={plotHeight}
-            fill="#e8f3f1"
+            fill="var(--chart-forecast-bg, #e8f3f1)"
             opacity=".8"
           />
         )}
@@ -106,7 +107,7 @@ export function TrendChart({
           <polyline
             points={observed.join(' ')}
             fill="none"
-            stroke="#147c78"
+            stroke="var(--chart-observed, #147c78)"
             strokeWidth="3.3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -115,7 +116,7 @@ export function TrendChart({
             <polyline
               points={projected.join(' ')}
               fill="none"
-              stroke="#39a9a0"
+              stroke="var(--chart-forecast, #39a9a0)"
               strokeWidth="3.3"
               strokeDasharray="7 6"
               strokeLinecap="round"
@@ -144,7 +145,10 @@ export function TrendChart({
             onMouseEnter={() => setActive(index)}
             onFocus={() => setActive(index)}
             tabIndex={0}
-            aria-label={`${day(row.date)}: ${decimal(row.value)} направлений`}
+            aria-label={t('{date}: {count} направлений', {
+              date: day(row.date),
+              count: decimal(row.value),
+            })}
           />
         ))}
         {active != null && current && (
@@ -154,23 +158,36 @@ export function TrendChart({
               x2={x(active)}
               y1={top}
               y2={top + plotHeight}
-              stroke="#71bcb4"
+              stroke="var(--chart-guide, #71bcb4)"
               strokeDasharray="4 5"
             />
             <circle
               cx={x(active)}
               cy={y(current.value)}
               r="5"
-              fill="#147c78"
-              stroke="white"
+              fill="var(--chart-observed, #147c78)"
+              stroke="var(--chart-point-border, white)"
               strokeWidth="2"
             />
-            <rect x={tipX} y="2" width="180" height="61" rx="10" fill="#143d43" />
-            <text x={tipX + 11} y="25" fill="#bed8d7" fontSize="14">
+            <rect
+              x={tipX}
+              y="2"
+              width="180"
+              height="61"
+              rx="10"
+              fill="var(--chart-tooltip-bg, #143d43)"
+            />
+            <text x={tipX + 11} y="25" fill="var(--chart-tooltip-muted, #bed8d7)" fontSize="14">
               {day(current.date)}
             </text>
-            <text x={tipX + 11} y="49" fill="white" fontSize="16" fontWeight="700">
-              {decimal(current.value)} направл.
+            <text
+              x={tipX + 11}
+              y="49"
+              fill="var(--chart-tooltip-ink, white)"
+              fontSize="16"
+              fontWeight="700"
+            >
+              {t('{count} направл.', { count: decimal(current.value) })}
             </text>
           </g>
         )}

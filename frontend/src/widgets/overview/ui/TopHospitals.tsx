@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import type { MetricRow } from '../../../shared/api/types'
 import { number } from '../../../shared/lib/format'
@@ -22,18 +23,18 @@ export function TopHospitals({
     <section className="panel top-panel">
       <div className="panel-heading">
         <div>
-          <h2>Стационары по числу направлений</h2>
+          <h2>{t('Стационары по числу направлений')}</h2>
         </div>
         <button className="text-button" onClick={onAll}>
-          Все стационары <ArrowRight size={16} />
+          {t('Все стационары')} <ArrowRight size={16} />
         </button>
       </div>
       {loading && <Loading />}
       {error && <ErrorState message={error} />}
       {!loading && !error && (
         <div className="top-hospitals-head" aria-hidden="true">
-          <span>Организация</span>
-          <span>Направления</span>
+          <span>{t('Организация')}</span>
+          <span>{t('Направления')}</span>
         </div>
       )}
       {items?.map((row) => (

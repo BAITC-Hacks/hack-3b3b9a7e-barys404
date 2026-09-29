@@ -3,14 +3,14 @@
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
-  border: 1px solid #dcebe5;
-  background: #eaf5f0;
+  border: 1px solid var(--tone-border, #dcebe5);
+  background: var(--tone-soft, #eaf5f0);
   border-radius: 10px;
   margin-bottom: 18px;
 }
 
 .context-label {
-  color: #56877b;
+  color: var(--tone-muted, #56877b);
   font-size: 0.875rem;
   font-weight: 800;
   white-space: nowrap;
@@ -34,7 +34,7 @@
   border: 0;
   background: transparent;
   text-align: left;
-  color: #315f55;
+  color: var(--tone-ink, #315f55);
   font-size: 0.875rem;
   font-weight: 700;
   padding: 4px;
@@ -55,8 +55,8 @@
   left: 0;
   width: min(440px, 80vw);
   padding: 10px;
-  background: #fff;
-  border: 1px solid #dcebe5;
+  background: var(--tone-surface, #fff);
+  border: 1px solid var(--tone-border, #dcebe5);
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(17, 63, 56, 0.16);
 }
@@ -66,9 +66,9 @@
   align-items: center;
   gap: 7px;
   padding: 0 9px;
-  border: 1px solid #dcebe5;
+  border: 1px solid var(--tone-border, #dcebe5);
   border-radius: 8px;
-  color: #83a79c;
+  color: var(--tone-muted, #83a79c);
 }
 
 .chooser-search input {
@@ -76,7 +76,7 @@
   height: 36px;
   border: 0;
   outline: 0;
-  color: #315f55;
+  color: var(--tone-ink, #315f55);
   font-size: 0.875rem;
 }
 
@@ -97,14 +97,14 @@
   text-align: left;
   padding: 10px;
   border-radius: 7px;
-  color: #50766e;
+  color: var(--tone-muted, #50766e);
   font-size: 0.875rem;
   line-height: 1.4;
 }
 
 .chooser-list button:hover {
-  background: #eef8f2;
-  color: #197b6e;
+  background: var(--tone-soft, #eef8f2);
+  color: var(--tone-accent, #197b6e);
 }
 
 .chooser-list button span {
@@ -115,6 +115,6 @@
 
 .chooser-list p {
   padding: 12px;
-  color: #607970;
+  color: var(--tone-muted, #607970);
   font-size: 0.875rem;
 }

@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  border-top: 1px solid #eef3ef;
+  border-top: 1px solid var(--tone-border, #eef3ef);
   padding: 11px 0;
 }
 
@@ -74,8 +74,8 @@
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: #edf7f2;
-  color: #439982;
+  background: var(--tone-soft, #edf7f2);
+  color: var(--tone-accent, #439982);
   display: grid;
   place-items: center;
 }
@@ -83,20 +83,20 @@
 .source-list strong,
 .model-row strong {
   font-size: 0.875rem;
-  color: #4b736a;
+  color: var(--tone-muted, #4b736a);
 }
 
 .source-list small,
 .model-row small {
   font-size: 0.875rem;
-  color: #607970;
+  color: var(--tone-muted, #607970);
 }
 
 .model-row {
   display: flex;
   align-items: center;
   gap: 11px;
-  border-top: 1px solid #eef3ef;
+  border-top: 1px solid var(--tone-border, #eef3ef);
   padding: 20px 0;
 }
 
@@ -107,14 +107,14 @@
 }
 
 .panel code {
-  color: #3b7f70;
-  background: #eaf5ef;
+  color: var(--tone-accent, #3b7f70);
+  background: var(--tone-soft, #eaf5ef);
   padding: 2px 5px;
   border-radius: 4px;
 }
 
 .limitations-panel {
-  background: #fbfdfb;
+  background: var(--tone-raised, #fbfdfb);
 }
 
 .limitations-grid {
@@ -125,18 +125,18 @@
 }
 
 .limitations-grid > div {
-  border-left: 2px solid #c8e5d8;
+  border-left: 2px solid var(--tone-border, #c8e5d8);
   padding-left: 13px;
 }
 
 .limitations-grid b {
   font-size: 0.875rem;
-  color: #42766a;
+  color: var(--tone-muted, #42766a);
 }
 
 .limitations-grid p {
   font-size: 0.875rem;
   line-height: 1.7;
-  color: #607970;
+  color: var(--tone-muted, #607970);
   margin: 7px 0 0;
 }

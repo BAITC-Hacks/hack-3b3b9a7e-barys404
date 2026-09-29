@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Info } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { query } from '../../../entities/hospital/index'
@@ -44,9 +45,9 @@ export function ComparePage({
   return (
     <>
       <PageHeading
-        eyebrow="СРАВНЕНИЕ"
-        title="Сопоставьте стационары"
-        description="Выберите до трёх организаций за один период и с одинаковыми фильтрами."
+        eyebrow={t('СРАВНЕНИЕ')}
+        title={t('Сопоставьте стационары')}
+        description={t('Выберите до трёх организаций за один период и с одинаковыми фильтрами.')}
       />
       {error && <ErrorState message={error} />}
       <div className="compare-layout">
@@ -69,22 +70,24 @@ export function ComparePage({
         ) : null}
       </div>
       <p className="page-note">
-        Сравнение описывает данные, но не учитывает сложность случаев и коечную мощность. Оно не
-        является рейтингом качества больниц.
+        {t(
+          'Сравнение описывает данные, но не учитывает сложность случаев и коечную мощность. Оно не является рейтингом качества больниц.',
+        )}{' '}
       </p>
       {data &&
         selected.some((name) => !chosen.some((row) => row.organization_or_region === name)) && (
           <div className="workspace-note">
             <Info size={18} />
             <span>
-              Часть выбранных организаций не проходит текущие фильтры или минимум 30 направлений. В
-              сводку войдут только видимые результаты.
+              {t(
+                'Часть выбранных организаций не проходит текущие фильтры или минимум 30 направлений. В сводку войдут только видимые результаты.',
+              )}{' '}
             </span>
             <button
               className="text-button"
               onClick={() => setSelected(chosen.map((row) => row.organization_or_region))}
             >
-              Снять скрытый выбор
+              {t('Снять скрытый выбор')}{' '}
             </button>
           </div>
         )}

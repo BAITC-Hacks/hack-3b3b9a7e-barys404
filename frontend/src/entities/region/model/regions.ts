@@ -1,3 +1,5 @@
+import { t } from '../../../shared/lib/i18n'
+
 // Regional prefixes of KATO codes. Display only: never replace API filter values.
 // Source: https://adilet.zan.kz/rus/docs/G26G0000256
 export const REGION_NAMES: Readonly<Record<string, string>> = Object.freeze({
@@ -24,7 +26,7 @@ export const REGION_NAMES: Readonly<Record<string, string>> = Object.freeze({
 })
 
 export function regionLabel(code: string): string {
-  if (!code) return 'Все регионы'
+  if (!code) return t('Все регионы')
   const name = Object.hasOwn(REGION_NAMES, code) ? REGION_NAMES[code] : 'Регион'
-  return `${name} · ${code}`
+  return `${t(name)} · ${code}`
 }

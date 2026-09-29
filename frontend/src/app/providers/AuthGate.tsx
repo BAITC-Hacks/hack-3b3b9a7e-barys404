@@ -1,3 +1,4 @@
+import { t } from '../../shared/lib/i18n'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { ApiError, clearPrivateData, get, post } from '../../shared/api/client'
 import { type User } from '../../shared/api/types'
@@ -129,13 +130,13 @@ export function AuthGate({
     return (
       <main className="auth-state">
         <div className="spinner" />
-        <p>Проверяем сеанс…</p>
+        <p>{t('Проверяем сеанс…')}</p>
       </main>
     )
   if (error && !user)
     return (
       <main className="auth-state">
-        <p role="alert">{error}</p>
+        <p role="alert">{t(error)}</p>
         <button
           className="primary-button"
           onClick={() => {
@@ -143,7 +144,7 @@ export function AuthGate({
             void check()
           }}
         >
-          Повторить
+          {t('Повторить')}{' '}
         </button>
       </main>
     )
@@ -162,7 +163,7 @@ export function AuthGate({
   const showLogin = hash && hash !== '#welcome'
   return showLogin ? (
     <LoginPage
-      notice={notice}
+      notice={t(notice)}
       onLogin={(account) => {
         clearPrivateData()
         setUser(account)

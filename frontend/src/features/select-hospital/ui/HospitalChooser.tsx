@@ -1,3 +1,4 @@
+import { t } from '../../../shared/lib/i18n'
 import { Building2, Check, ChevronDown, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useEntrance } from '../../../shared/lib/useEntrance'
@@ -30,7 +31,7 @@ export function HospitalChooser({
           setSearch('')
         }}
         aria-expanded={open}
-        aria-label="Выбрать стационар"
+        aria-label={t('Выбрать стационар')}
         title={hospital}
       >
         <Building2 size={16} />
@@ -43,8 +44,8 @@ export function HospitalChooser({
             <Search size={15} />
             <input
               autoFocus
-              placeholder="Найти стационар"
-              aria-label="Найти стационар"
+              placeholder={t('Найти стационар')}
+              aria-label={t('Найти стационар')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={(event) => {
@@ -72,7 +73,7 @@ export function HospitalChooser({
                 </button>
               ))
             ) : (
-              <p>Ничего не найдено</p>
+              <p>{t('Ничего не найдено')}</p>
             )}
           </div>
         </div>

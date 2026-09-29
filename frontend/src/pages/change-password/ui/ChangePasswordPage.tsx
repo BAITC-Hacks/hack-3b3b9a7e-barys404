@@ -1,3 +1,5 @@
+import { DisplayPreferences } from '../../../shared/ui/DisplayPreferences'
+import { t } from '../../../shared/lib/i18n'
 import { LockKeyhole } from 'lucide-react'
 import { useState } from 'react'
 import { post } from '../../../shared/api/client'
@@ -15,12 +17,16 @@ export function ChangePasswordPage({
   const [busy, setBusy] = useState(false)
   return (
     <main className="auth-state">
+      <div className="auth-preferences">
+        <DisplayPreferences />
+      </div>
       <div className="login-form-card">
         <LockKeyhole size={25} />
-        <h1>Установите свой пароль</h1>
+        <h1>{t('Установите свой пароль')}</h1>
         <p>
-          Вы вошли с временным паролем. Перед началом работы замените его на личный — от 12 до 128
-          символов.
+          {t(
+            'Вы вошли с временным паролем. Перед началом работы замените его на личный — от 12 до 128 символов.',
+          )}{' '}
         </p>
         <form
           onSubmit={async (event) => {
@@ -38,7 +44,7 @@ export function ChangePasswordPage({
           }}
         >
           <label>
-            Временный пароль
+            {t('Временный пароль')}{' '}
             <input
               type="password"
               autoComplete="current-password"
@@ -48,7 +54,7 @@ export function ChangePasswordPage({
             />
           </label>
           <label>
-            Новый пароль
+            {t('Новый пароль')}{' '}
             <input
               type="password"
               autoComplete="new-password"
@@ -61,11 +67,11 @@ export function ChangePasswordPage({
           </label>
           {error && (
             <p className="message message-error" role="alert">
-              {error}
+              {t(error)}
             </p>
           )}
           <button className="primary-button" disabled={busy}>
-            Сохранить пароль
+            {t('Сохранить пароль')}{' '}
           </button>
         </form>
         <button
@@ -74,7 +80,7 @@ export function ChangePasswordPage({
             void onLogout().catch((reason) => setError(reason.message))
           }}
         >
-          Выйти
+          {t('Выйти')}{' '}
         </button>
       </div>
     </main>
