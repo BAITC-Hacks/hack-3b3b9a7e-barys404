@@ -181,6 +181,227 @@
 .visual-bottom {
   font-size: 12px;
 }
+.welcome-map {
+  margin: 0 40px 36px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.welcome-map-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px 22px;
+}
+.welcome-map-header h2 {
+  margin: 7px 0 6px;
+  color: var(--ink);
+  font-size: 23px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.welcome-map-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.welcome-map-locations {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.welcome-map-locations button,
+.welcome-map-overlay button {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.welcome-map-locations button {
+  min-height: 36px;
+  padding: 7px 11px;
+}
+.welcome-map-locations button:hover,
+.welcome-map-overlay button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.welcome-map-locations button.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.welcome-map-locations button:focus-visible,
+.welcome-map-overlay button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.welcome-map-stage {
+  position: relative;
+  height: min(40vw, 430px);
+  min-height: 320px;
+  background: var(--canvas);
+  border-block: 1px solid var(--line);
+}
+.welcome-map-canvas {
+  width: 100%;
+  height: 100%;
+}
+.welcome-country-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 28% 15%, #f8fcfa 0, #e7f2ed 80%);
+}
+.welcome-country-map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 17px 24px 26px;
+}
+.welcome-country-outline {
+  fill: #e2eee7;
+  stroke: #7eaa9b;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.welcome-country-hospital {
+  fill: #218a7d;
+  stroke: #e2eee7;
+  stroke-width: 0.65;
+  cursor: pointer;
+  transition: r 160ms ease, fill 160ms ease;
+}
+.welcome-country-hospital:hover,
+.welcome-country-hospital:focus-visible {
+  fill: #f2a93e;
+  r: 4.4;
+  outline: none;
+}
+.welcome-country-city {
+  cursor: pointer;
+}
+.welcome-country-city:focus-visible {
+  outline: none;
+}
+.welcome-country-city-hit {
+  fill: transparent;
+}
+.welcome-country-city-dot {
+  fill: #fff;
+  stroke: #167f74;
+  stroke-width: 2;
+}
+.welcome-country-city:hover .welcome-country-city-dot,
+.welcome-country-city:focus-visible .welcome-country-city-dot {
+  fill: #fff;
+  stroke: #f2a93e;
+  stroke-width: 4;
+}
+.welcome-country-tooltip {
+  position: absolute;
+  left: 24px;
+  bottom: 43px;
+  display: grid;
+  gap: 4px;
+  max-width: min(440px, calc(100% - 48px));
+  padding: 13px 16px;
+  border: 1px solid #c7ddd4;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 96%);
+  color: #243e36;
+  box-shadow: 0 14px 28px rgb(38 81 65 / 13%);
+  pointer-events: none;
+}
+.welcome-country-tooltip strong {
+  font-size: 13px;
+  line-height: 1.4;
+}
+.welcome-country-tooltip span,
+.welcome-country-tooltip small {
+  color: #607a6f;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.welcome-country-hint {
+  position: absolute;
+  right: 19px;
+  bottom: 16px;
+  color: #4e7467;
+  font-size: 12px;
+  pointer-events: none;
+}
+.welcome-hospital-popup {
+  display: grid;
+  gap: 7px;
+  max-width: 280px;
+  color: #253a35;
+  line-height: 1.4;
+}
+.welcome-hospital-popup strong {
+  font-size: 13px;
+}
+.welcome-hospital-popup span {
+  color: #62756e;
+  font-size: 11px;
+}
+.welcome-hospital-popup a {
+  color: #167f74;
+  font-size: 11px;
+  font-weight: 650;
+}
+.welcome-map-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--canvas);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+.welcome-map-overlay svg {
+  color: var(--accent);
+}
+.welcome-map-overlay button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  color: var(--ink);
+}
+.welcome-map-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 28px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.welcome-map-footer a {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.welcome-map-footer a:hover {
+  color: var(--accent);
+}
+.welcome-map .maplibregl-ctrl-attrib {
+  font-size: 11px;
+}
 .welcome-audiences {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -263,6 +484,27 @@
     gap: 24px;
     margin-inline: 24px;
   }
+  .welcome-map {
+    margin-inline: 24px;
+  }
+  .welcome-map-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px 24px;
+  }
+  .welcome-map-locations {
+    justify-content: flex-start;
+  }
+  .welcome-map-stage {
+    height: 360px;
+    min-height: 0;
+  }
+  .welcome-map-footer {
+    padding: 12px 24px;
+    flex-direction: column;
+    gap: 4px;
+  }
   .welcome-method {
     margin-inline: 24px;
   }
@@ -294,5 +536,30 @@
   }
   .welcome-visual {
     padding: 18px;
+  }
+  .welcome-map {
+    margin-inline: 24px;
+  }
+  .welcome-map-header {
+    padding: 20px;
+  }
+  .welcome-map-stage {
+    height: 320px;
+  }
+  .welcome-country-map svg {
+    padding: 18px 8px 26px;
+  }
+  .welcome-country-hint {
+    right: 12px;
+    bottom: 10px;
+    font-size: 10px;
+  }
+  .welcome-country-tooltip {
+    left: 12px;
+    bottom: 36px;
+    max-width: calc(100% - 24px);
+  }
+  .welcome-map-footer {
+    padding: 12px 20px;
   }
 }

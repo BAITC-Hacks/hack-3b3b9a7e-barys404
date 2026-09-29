@@ -18,6 +18,93 @@ export const commonMessages: Record<string, { kk: string; en: string }> = {
   'Закрыть меню': { kk: 'Мәзірді жабу', en: 'Close menu' },
   'Локальное демо': { kk: 'Жергілікті демо', en: 'Local demo' },
   'Исторические данные · 2025': { kk: 'Тарихи деректер · 2025', en: 'Historical data · 2025' },
+  География: { kk: 'География', en: 'Geography' },
+  'Казахстан на карте': { kk: 'Қазақстан картасы', en: 'Kazakhstan on the map' },
+  'Стационары на карте Казахстана': { kk: 'Қазақстан картасындағы стационарлар', en: 'Hospitals across Kazakhstan' },
+  'Точки из данных MedFlow AI. Выберите город, чтобы увидеть их на карте в 3D.': {
+    kk: 'MedFlow AI деректеріндегі нүктелер. Оларды 3D картадан көру үшін қаланы таңдаңыз.',
+    en: 'Locations from MedFlow AI data. Choose a city to see them on a 3D map.',
+  },
+  'На карте показаны организации, сопоставленные с объектами OpenStreetMap. Выберите город или больницу для просмотра в 3D.': {
+    kk: 'Картада OpenStreetMap нысандарымен сәйкестендірілген ұйымдар көрсетілген. 3D көрінісі үшін қаланы немесе аурухананы таңдаңыз.',
+    en: 'The map shows organisations matched to OpenStreetMap places. Choose a city or hospital to view them in 3D.',
+  },
+  'Координаты объекта OpenStreetMap': {
+    kk: 'OpenStreetMap нысанының координаттары',
+    en: 'OpenStreetMap place coordinates',
+  },
+  'Открыть в OpenStreetMap': {
+    kk: 'OpenStreetMap картасында ашу',
+    en: 'Open in OpenStreetMap',
+  },
+  'Контур Казахстана с точками организаций': {
+    kk: 'Ұйымдар нүктелері көрсетілген Қазақстан картасы',
+    en: 'Kazakhstan outline with organisation markers',
+  },
+  'Открыть 3D-карту города {city}': {
+    kk: '{city} қаласының 3D картасын ашу',
+    en: 'Open the 3D map of {city}',
+  },
+  'Положение ориентировочное — по названию города или области.': {
+    kk: 'Орны шамамен көрсетілген — қала немесе облыс атауы бойынша.',
+    en: 'Approximate location based on the city or region name.',
+  },
+  'Положение ориентировочное: известен населённый пункт, не адрес здания.': {
+    kk: 'Орны шамамен көрсетілген: елді мекен белгілі, ғимараттың мекенжайы емес.',
+    en: 'Approximate location: the locality is known, not the building address.',
+  },
+  'Нажмите на точку или выберите город': {
+    kk: 'Нүктені басыңыз немесе қаланы таңдаңыз',
+    en: 'Select a marker or choose a city',
+  },
+  'Интерактивная карта города': {
+    kk: 'Қаланың интерактивті картасы',
+    en: 'Interactive city map',
+  },
+  'Загружаем карту города…': { kk: 'Қала картасы жүктелуде…', en: 'Loading city map…' },
+  '{count} организаций из выгрузки · положение ориентировочное, по названию города или области.': {
+    kk: 'Деректерден {count} ұйым · орны шамамен, қала немесе облыс атауы бойынша.',
+    en: '{count} organisations from the dataset · approximate location based on city or region name.',
+  },
+  '{count} из 1 382 организаций удалось связать с городом или областью по названию. Точки ориентировочные.': {
+    kk: '1 382 ұйымның {count} ұйымын атауы бойынша қалаға немесе облысқа сәйкестендірдік. Нүктелер шамамен көрсетілген.',
+    en: '{count} of 1,382 organisations were linked to a city or region by name. Markers are approximate.',
+  },
+  '{count} организаций · точки ориентировочные, не адреса зданий.': {
+    kk: '{count} ұйым · нүктелер шамамен көрсетілген, ғимарат мекенжайы емес.',
+    en: '{count} organisations · approximate markers, not building addresses.',
+  },
+  '{count} из 1 382 организаций сопоставлены с точками OpenStreetMap. Остальные не показаны.': {
+    kk: '1 382 ұйымның {count} ұйымы OpenStreetMap нүктелерімен сәйкестендірілді. Қалғандары көрсетілмеген.',
+    en: '{count} of 1,382 organisations are matched to OpenStreetMap places. The rest are not shown.',
+  },
+  'Сопоставленных организаций поблизости: {count}.': {
+    kk: 'Жақын жерде сәйкестендірілген ұйымдар: {count}.',
+    en: 'Matched organisations nearby: {count}.',
+  },
+  'Выберите город, чтобы рассмотреть его улицы и здания в объёме.': {
+    kk: 'Көшелері мен ғимараттарын көлемде көру үшін қаланы таңдаңыз.',
+    en: 'Choose a city to explore its streets and buildings in 3D.',
+  },
+  'Выбор города': { kk: 'Қаланы таңдау', en: 'Choose a city' },
+  'Весь Казахстан': { kk: 'Бүкіл Қазақстан', en: 'All Kazakhstan' },
+  Астана: { kk: 'Астана', en: 'Astana' },
+  Алматы: { kk: 'Алматы', en: 'Almaty' },
+  Шымкент: { kk: 'Шымкент', en: 'Shymkent' },
+  'Интерактивная карта Казахстана': {
+    kk: 'Қазақстанның интерактивті картасы',
+    en: 'Interactive map of Kazakhstan',
+  },
+  'Карта сейчас недоступна.': { kk: 'Карта қазір қолжетімсіз.', en: 'The map is unavailable.' },
+  'Загружаем карту Казахстана…': {
+    kk: 'Қазақстан картасы жүктелуде…',
+    en: 'Loading the map of Kazakhstan…',
+  },
+  Повторить: { kk: 'Қайталау', en: 'Retry' },
+  'Карта показывает городскую среду, а не расположение стационаров.': {
+    kk: 'Карта қала ортасын көрсетеді, стационарлардың орналасуын емес.',
+    en: 'The map shows the city, not hospital locations.',
+  },
   'ВАША ОРГАНИЗАЦИЯ': { kk: 'СІЗДІҢ ҰЙЫМЫҢЫЗ', en: 'YOUR ORGANISATION' },
   'Проверьте, что API запущен и подготовленные данные находятся в папке проекта.': {
     kk: 'Сервер мен деректердің қолжетімділігін әкімшіден тексеруді сұраңыз.',

@@ -3,6 +3,7 @@ import { PublicFooter } from '../../../widgets/public-shell/index'
 import { PublicHeader } from '../../../widgets/public-shell/index'
 import { WelcomeAudiences } from './WelcomeAudiences'
 import { WelcomeHero } from './WelcomeHero'
+import { WelcomeMap } from './WelcomeMap'
 import { WelcomeMethod } from './WelcomeMethod'
 
 export function WelcomePage({ section }: { section?: string }) {
@@ -20,6 +21,7 @@ export function WelcomePage({ section }: { section?: string }) {
       <PublicHeader />
       <main>
         <WelcomeHero />
+        <WelcomeMap />
         <WelcomeAudiences />
         <WelcomeMethod />
       </main>
