@@ -6,5 +6,6 @@ export const themeMessages: Record<string, { kk: string; en: string }> = {
   'Войти в кабинет': { kk: 'Кабинетке кіру', en: 'Sign in to workspace' },
   Войти: { kk: 'Кіру', en: 'Sign in' },
   'Открыть меню': { kk: 'Мәзірді ашу', en: 'Open menu' },
+  'Настройки кабинета': { kk: 'Кабинет баптаулары', en: 'Workspace settings' },
   Данные: { kk: 'Деректер', en: 'Data' },
 }

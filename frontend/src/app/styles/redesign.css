@@ -1378,3 +1378,91 @@
     box-shadow: none;
   }
 }
+
+/* On phones, secondary controls open below a single compact header row. */
+.mobile-settings-toggle {
+  display: none;
+}
+@media (max-width: 760px) {
+  .workspace .topbar {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 10px;
+    height: auto;
+    min-height: 68px;
+    padding: 10px 12px;
+  }
+  .workspace .mobile-menu,
+  .workspace .mobile-settings-toggle {
+    display: grid;
+    place-items: center;
+  }
+  .workspace .mobile-menu {
+    border: 0;
+    background: transparent;
+  }
+  .workspace .workspace-location {
+    min-width: 0;
+    margin: 0;
+    gap: 2px;
+  }
+  .workspace .workspace-location small {
+    font-size: 10px;
+    line-height: 14px;
+  }
+  .workspace .workspace-location strong {
+    font-size: 14px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+  }
+  .workspace .topbar-actions {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  }
+  .workspace .topbar-actions--open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .workspace .topbar-actions .display-preferences {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 10px;
+  }
+  .workspace .topbar-actions .language-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .workspace .topbar-actions .user-menu {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .workspace .topbar-actions .user-menu strong,
+  .workspace .topbar-actions .user-menu small {
+    max-width: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+  }
+  .workspace .topbar-actions .user-menu > span[role='alert'] {
+    position: static;
+    grid-column: 1 / -1;
+    white-space: normal;
+    margin: 0;
+  }
+}
