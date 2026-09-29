@@ -13,12 +13,12 @@ export function PageHeading({
 }) {
   return (
     <div className="page-heading">
-      <div>
+      <div className="page-heading-copy">
         {eyebrow && <div className="eyebrow">{t(eyebrow)}</div>}
         <h1>{t(title)}</h1>
         <p>{t(description)}</p>
       </div>
-      {action}
+      {action && <div className="page-heading-action">{action}</div>}
     </div>
   )
 }

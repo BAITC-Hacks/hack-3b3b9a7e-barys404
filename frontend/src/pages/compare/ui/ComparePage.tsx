@@ -1,6 +1,6 @@
 import { t } from '../../../shared/lib/i18n'
 import { Info } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { query } from '../../../entities/hospital/index'
 import { type Filters, type MetricRow } from '../../../shared/api/types'
 import { BriefingPanel } from '../../../features/export-briefing/index'
@@ -16,10 +16,12 @@ export function ComparePage({
   filters,
   openHospital,
   focus,
+  filterBar,
 }: {
   filters: Filters
   openHospital: (name: string) => void
   focus: string
+  filterBar?: ReactNode
 }) {
   const search = useSubmittedSearch()
   const [selected, setSelected] = useState<string[]>(focus ? [focus] : [])
@@ -49,6 +51,7 @@ export function ComparePage({
         title={t('Сопоставьте стационары')}
         description={t('Выберите до трёх организаций за один период и с одинаковыми фильтрами.')}
       />
+      {filterBar}
       {error && <ErrorState message={error} />}
       <div className="compare-layout">
         <ComparePicker

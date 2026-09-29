@@ -4,7 +4,12 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from backend.analytics.dashboard_data import historical_charts, overview, compare_groups, comparison_trends
+from backend.modules.analytics.dashboard_data import (
+    compare_groups,
+    comparison_trends,
+    historical_charts,
+    overview,
+)
 
 
 @pytest.fixture

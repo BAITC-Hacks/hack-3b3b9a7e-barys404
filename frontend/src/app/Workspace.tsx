@@ -152,9 +152,6 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                 />
               ) : (
                 <>
-                  {['hospitals', 'hospital', 'compare'].includes(activeView) && (
-                    <FilterBar filters={filters} setFilters={setFilters} bootstrap={boot.data} />
-                  )}
                   {activeView === 'overview' && (
                     <OverviewPage
                       mode={mode}
@@ -167,7 +164,17 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                     />
                   )}
                   {activeView === 'hospitals' && (
-                    <HospitalsPage filters={filters} openHospital={openHospital} />
+                    <HospitalsPage
+                      filters={filters}
+                      openHospital={openHospital}
+                      filterBar={
+                        <FilterBar
+                          filters={filters}
+                          setFilters={setFilters}
+                          bootstrap={boot.data}
+                        />
+                      }
+                    />
                   )}
                   {activeView === 'hospital' && (
                     <HospitalPage
@@ -176,6 +183,13 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                       mode={mode}
                       go={navigate}
                       compare={openComparison}
+                      filterBar={
+                        <FilterBar
+                          filters={filters}
+                          setFilters={setFilters}
+                          bootstrap={boot.data}
+                        />
+                      }
                     />
                   )}
                   {activeView === 'compare' && (
@@ -183,6 +197,13 @@ export function Workspace({ user, logout }: { user: User; logout: () => Promise<
                       filters={filters}
                       openHospital={openHospital}
                       focus={compareFocus}
+                      filterBar={
+                        <FilterBar
+                          filters={filters}
+                          setFilters={setFilters}
+                          bootstrap={boot.data}
+                        />
+                      }
                     />
                   )}
                   {activeView === 'forecasts' && (

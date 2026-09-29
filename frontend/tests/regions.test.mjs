@@ -6,6 +6,9 @@ import { load } from './helpers/load.mjs'
 
 const { REGION_NAMES, regionLabel } = await load('src/entities/region/model/regions.ts')
 const { FilterBar } = await load('src/features/filter-referrals/ui/FilterBar.tsx')
+const { editFilterDraft, initialFilters } = await load(
+  'src/features/filter-referrals/model/filterDraft.ts',
+)
 const { query } = await load('src/shared/api/client.ts')
 
 test('all 20 region codes have labels; unknown codes remain visible without guessing', () => {
@@ -47,32 +50,33 @@ test('the shared overview filter displays names but selects, sends and resets or
     regions: ['31', '75', '99'],
     profiles: ['profile'],
   }
-  let next
   const props = {
     filters,
     bootstrap,
-    setFilters: (value) => {
-      next = value
+    setFilters: () => {
+      throw new Error('Rendering must not apply filters')
     },
   }
   const html = renderToStaticMarkup(createElement(FilterBar, props))
   assert.match(html, /<fieldset class="filter-period">/)
   assert.match(html, /Период регистрации/)
-  assert.match(html, /type="date" min="2025-01-01" max="2025-03-31"/)
+  assert.match(html, /type="date"[^>]*min="2025-01-01"[^>]*max="2025-03-31"/)
   assert.match(html, /value="31" selected="">Жамбылская область · 31/)
   assert.match(html, /value="75">г\. Алматы · 75/)
   assert.match(html, /value="99">Регион · 99/)
-  const bar = FilterBar(props)
-  const regionSelect = bar.props.children
-    .find(
-      (child) =>
-        child?.type === 'label' &&
-        child.props.children?.some?.((node) => node?.props?.title === regionLabel('31')),
-    )
-    .props.children.find((child) => child?.type === 'select')
-  regionSelect.props.onChange({ target: { value: '75' } })
+  assert.match(html, /<form[^>]*aria-label="Фильтры направлений"/)
+  assert.match(html, /type="submit" disabled=""/)
+  const next = editFilterDraft(filters, 'region', '75')
   assert.deepEqual(next, { ...filters, region: '75' })
+  assert.equal(filters.region, '31')
   assert.equal(new URLSearchParams(query(next)).get('region'), '75')
-  bar.props.children.find((child) => child?.type === 'button').props.onClick()
-  assert.deepEqual(next, { start: filters.start, end: filters.end, region: '', profile: '' })
+  assert.deepEqual(initialFilters(bootstrap.period), {
+    start: filters.start,
+    end: filters.end,
+    region: '',
+    profile: '',
+  })
+  assert.equal(editFilterDraft(filters, 'start', '2025-04-01').end, '2025-04-01')
+  assert.equal(editFilterDraft(filters, 'end', '2024-12-31').start, '2024-12-31')
+  assert.equal(editFilterDraft(filters, 'start', '').end, filters.end)
 })

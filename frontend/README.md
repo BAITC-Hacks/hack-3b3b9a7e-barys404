@@ -51,12 +51,38 @@ source of truth even when buttons or sections are hidden.
 
 The redesign covers the workspace shell, overview, public landing, sign-in and
 administration. They share light clinical surfaces, restrained teal and flat layouts.
-Other screens keep their interaction patterns and inherit common typography.
+The 2026-09-29 composition adds a docked role-aware sidebar, an overview metric
+rail next to the main chart, a narrow forecast configuration panel, a sign-in
+portal and persistent admin section navigation. Existing light/dark palette
+tokens, authentication, model inputs and API contracts are unchanged.
+
+Referral filters have separate draft and applied states. Editing a date, region
+or profile never triggers a request: submit **Apply** (or Enter) to commit the
+whole draft. Reset returns to the dataset period and all regions/profiles.
+`features/filter-referrals/model/filterDraft.ts` owns the date-order and reset
+rules; pages receive the same filter feature through a composition slot.
 
 `app/styles/index.css` defines the cascade; do not reorder imports casually. Theme
 tokens are in `theme.css`. Overview-specific rules are scoped to `overview-layout`
 and `overview-metrics`, without changing forecast or hospital metric layouts.
 The 21st direction and constraints are recorded in `.21st/` (no private data).
+The final `redesign.css` import owns the reversible composition layer and uses
+existing semantic color variables only. It includes desktop, tablet and mobile
+layouts. It does not duplicate data fetching or model logic.
+
+## Local redesign rollback
+
+The pre-redesign frontend was archived locally (not committed) under
+`.runtime/backups/redesign-20260929.8KvY1ZcS/`. From the repository root:
+
+```sh
+bash .runtime/backups/redesign-20260929.8KvY1ZcS/restore.sh
+```
+
+This saves the current frontend before restoring the archive and rebuilding it.
+No `.env`, PostgreSQL settings, backend, models or datasets are included or changed.
+Reload the browser after rebuilding. The snapshot restores the whole frontend,
+not just CSS; later frontend edits are retained in a fresh backup before rollback.
 
 Short entrance animations live in `shared/lib/useEntrance.ts` and use the native
 Web Animations API. Route/tab fades never remount forms. Motion is cancelled on

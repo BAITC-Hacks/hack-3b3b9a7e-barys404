@@ -1,4 +1,4 @@
-import { Activity } from 'lucide-react'
+import { Activity, Building2, ChevronRight, Landmark } from 'lucide-react'
 import { type Mode, type NavItem, type View } from '../../../shared/config/navigation'
 import { t } from '../../../shared/lib/i18n'
 
@@ -30,7 +30,13 @@ export function Sidebar({
           <small>{t('Госпитальная аналитика')}</small>
         </div>
       </div>
-      <div className="sidebar-divider" aria-hidden="true" />
+      <div className="sidebar-workspace">
+        {mode === 'hospital' ? <Building2 size={18} /> : <Landmark size={18} />}
+        <div>
+          <small>{t('Рабочий кабинет')}</small>
+          <strong>{t(mode === 'hospital' ? 'Больница' : 'Госорган')}</strong>
+        </div>
+      </div>
       <nav aria-label={t('Основная навигация')}>
         {items.map((item) => {
           const Icon = item.icon
@@ -46,7 +52,7 @@ export function Sidebar({
             >
               <Icon size={19} strokeWidth={1.8} />
               <span>{t(item.label)}</span>
-              {active && <span className="nav-indicator" />}
+              {active && <ChevronRight size={15} className="nav-chevron" aria-hidden="true" />}
             </button>
           )
         })}

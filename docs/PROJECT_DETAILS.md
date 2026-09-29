@@ -6,7 +6,7 @@
 
 ## Веб-интерфейс
 
-В `frontend/` находится интерфейс React, а `backend/api/main.py` отдаёт ему агрегированные показатели и прогнозы через HTTP. Готовая сборка обслуживается одним локальным Python-процессом на **http://127.0.0.1:8000**. Аккаунты, сессии и права доступа хранятся в PostgreSQL; настройка описана в [AUTH_SETUP.md](AUTH_SETUP.md).
+В `frontend/` находится интерфейс React, а `backend/main.py` отдаёт ему агрегированные показатели и прогнозы через HTTP. Готовая сборка обслуживается одним локальным Python-процессом на **http://127.0.0.1:8000**. Аккаунты, сессии и права доступа хранятся в PostgreSQL; настройка описана в [AUTH_SETUP.md](AUTH_SETUP.md).
 
 Если окружение и подготовленные данные уже есть:
 
@@ -16,7 +16,7 @@ cd frontend
 npm ci
 npm run build
 cd ..
-MEDFLOW_MEMORY_LIMIT=2GB .venv/bin/python -m uvicorn backend.api.main:app --host 127.0.0.1 --port 8000
+MEDFLOW_MEMORY_LIMIT=2GB .venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
 На Windows замените `.venv/bin/python` на `.venv\Scripts\python.exe` и задайте лимит памяти через `$env:MEDFLOW_MEMORY_LIMIT="2GB"`. Если данных ещё нет, положите исходные CSV в `data/raw/` и один раз запустите `python -m scripts.bootstrap` из виртуального окружения до запуска сайта. Эта подготовка обрабатывает большие файлы и может занять время; при обычном запуске веб-интерфейса она не повторяется.
@@ -52,7 +52,7 @@ npm --prefix frontend run build
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.inspect_data
 .\.venv\Scripts\python.exe -m backend.data_pipeline.preprocessing --force
-.\.venv\Scripts\python.exe -m backend.analytics.aggregation
+.\.venv\Scripts\python.exe -m backend.data_pipeline.aggregation
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
@@ -101,10 +101,10 @@ CSV (data/ + data/raw/)
 | `ml/explanations.py` | SHAP для веток CatBoost; основание и число случаев для групповых оценок |
 | `scripts/demo_check.py` | Проверка готовности данных, моделей и временной валидации без переобучения |
 | `frontend/src/pages/`, `frontend/src/widgets/` | Страницы React: обзор, карточка стационара, сравнение, прогнозы и администрирование |
-| `backend/analytics/briefing.py` | Одностраничный PDF с кириллицей |
-| `backend/analytics/aggregation.py`, `backend/analytics/anomaly_detection.py` | Дневные агрегаты и индикаторы относительно предыдущих наблюдений |
-| `backend/analytics/dashboard_data.py`, `backend/api/main.py` | Агрегированные запросы и HTTP-контракт интерфейса |
-| `backend/auth/`, `backend/api/auth.py`, `backend/api/admin.py` | Аккаунты PostgreSQL, сессии, роли и управление доступом |
+| `backend/modules/briefings/pdf.py` | Одностраничный PDF с кириллицей |
+| `backend/data_pipeline/aggregation.py`, `backend/data_pipeline/anomaly_detection.py` | Дневные агрегаты и индикаторы относительно предыдущих наблюдений |
+| `backend/modules/analytics/dashboard_data.py`, `backend/main.py` | Агрегированные запросы и HTTP-контракт интерфейса |
+| `backend/modules/auth/`, `backend/modules/accounts/` | Аккаунты PostgreSQL, сессии, роли и управление доступом |
 
 DuckDB использует дисковую промежуточную БД и лимит **2 GB**; тяжёлые операции удаления дублей выполняются одним потоком. Лимит DuckDB не ограничивает всю память процесса Python. В pandas передаётся только проекция признаков для CatBoost или небольшие агрегаты для графиков, а не все исходные CSV. Настройки — `backend/core/config.py`; при необходимости задайте `MEDFLOW_MEMORY_LIMIT`, например `1GB` или больше для крупной выгрузки. `MEDFLOW_DATA_DIR` позволяет выбрать другую папку данных.
 

@@ -7,8 +7,17 @@ from pathlib import Path
 
 import duckdb
 
-from backend.core.config import DATA_DIR, PROCESSED_DIR, DUCKDB_MEMORY_LIMIT, THREAD_COUNT, MIN_DATE, MAX_DATE, MIN_WAIT_DAYS, MAX_WAIT_DAYS
-from backend.core.utils import sql_literal, sql_identifier
+from backend.core.config import (
+    DATA_DIR,
+    DUCKDB_MEMORY_LIMIT,
+    MAX_DATE,
+    MAX_WAIT_DAYS,
+    MIN_DATE,
+    MIN_WAIT_DAYS,
+    PROCESSED_DIR,
+    THREAD_COUNT,
+)
+from backend.core.utils import sql_identifier, sql_literal
 
 SIGNATURES = {
     "waiting": {"region_origin_code", "mo_destination_code", "profile_code", "patient_seq_no", "registration_dt"},
@@ -25,7 +34,7 @@ PART_NUMBER_PATTERN = re.compile(
 
 def csv_format(path):
     # Bounded sniff. A malformed row is an error, never silently skipped.
-    with Path(path).open("r", encoding="utf-8-sig", newline="") as file:
+    with Path(      path).open("r", encoding="utf-8-sig", newline="") as file:
         sample = file.read(65536)
         try:
             delimiter = csv.Sniffer().sniff(sample, delimiters=",;\t|").delimiter

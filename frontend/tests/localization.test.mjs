@@ -170,7 +170,6 @@ test('translated forecast keeps the estimate and translated filters keep API val
     regions: ['31', '75'],
     profiles: ['Неврологический'],
   }
-  let next
   try {
     ui.setLanguage('en')
     const card = render(ui.WaitEstimateCard, { result })
@@ -180,20 +179,21 @@ test('translated forecast keeps the estimate and translated filters keep API val
     const props = {
       filters,
       bootstrap,
-      setFilters: (value) => {
-        next = value
+      setFilters: () => {
+        throw new Error('Rendering must not apply filters')
       },
     }
     const html = render(ui.FilterBar, props)
     assert.match(html, /value="31" selected="">Zhambyl Region · 31/)
     assert.match(html, /value="Неврологический"/)
-    const bar = ui.FilterBar(props)
-    const select = bar.props.children
-      .filter((child) => child?.type === 'label')
-      .flatMap((child) => child.props.children)
-      .find((child) => child?.type === 'select' && child.props.value === '31')
-    select.props.onChange({ target: { value: '75' } })
-    assert.deepEqual(next, { ...filters, region: '75' })
+    assert.match(html, /Referral filters/)
+    assert.match(html, /type="submit" disabled="">Apply/)
+    assert.deepEqual(filters, {
+      start: '2025-01-01',
+      end: '2025-03-31',
+      region: '31',
+      profile: 'Неврологический',
+    })
     ui.setLanguage('kk')
     assert.match(render(ui.WaitEstimateCard, { result }), /aria-label="2 күн 12 сағ"/)
     ui.setLanguage('ru')

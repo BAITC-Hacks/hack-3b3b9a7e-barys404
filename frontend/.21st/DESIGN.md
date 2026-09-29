@@ -1,5 +1,37 @@
 # MedFlow — design context
 
+## Current direction — 2026-09-29
+
+The user explicitly approved a substantial, reversible redesign, with the existing
+palette unchanged. The following composition supersedes the older layout notes
+below; they remain as decision history.
+
+Use a docked, role-aware sidebar and a stable workspace header. The overview has
+a compact metric rail to the right of its dominant chart (metrics first on mobile);
+task shortcuts help first-time
+users find a hospital, compare organisations or calculate a forecast. Pages own
+their heading, then receive the shared filter feature via a composition slot.
+Filter edits stay in a draft until Apply/Enter; Reset restores the source period.
+Keep independent native date controls, visible labels, bounds and focus rings.
+
+Forecasts separate the narrow configuration instrument from the prominent result,
+retaining duration units, support, error and method limitations. Login is a portal
+with a bounded form and adjacent role context; administration uses persistent
+section navigation around the existing account and system panels.
+
+Reuse the existing PageHeading, MetricCard, SearchForm, TrendChart, loading/error
+states, icon set and motion hooks. `src/app/styles/redesign.css` is a deliberately
+isolated final composition layer for rollback, using semantic theme variables
+only, including dark mode. New filter state rules live inside their FSD feature.
+
+21st inspiration: Dashboard Sidebar (14941, arunjdass/dashboard-sidebar), App
+Dashboard Layout (28770, shadcnstore/app-1) and Workspaces (4511, efferd/workspaces).
+Search metadata only; no hosted generation, new dependencies or private data.
+The pre-change frontend and a backup-first restore script are saved locally in
+`.runtime/backups/redesign-20260929.8KvY1ZcS/` (not committed).
+
+## Earlier decisions
+
 Working healthcare analytics, not a marketing page. Preserve the familiar flow:
 overview → hospitals → comparison → forecasts. Roles and data scopes stay on the server.
 

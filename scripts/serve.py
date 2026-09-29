@@ -8,7 +8,7 @@ def main():
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
     import uvicorn
-    uvicorn.run("backend.api.main:app", host=args.host, port=args.port, access_log=False)
+    uvicorn.run("backend.main:app", host=args.host, port=args.port, access_log=False)
 
 
 if __name__ == "__main__":

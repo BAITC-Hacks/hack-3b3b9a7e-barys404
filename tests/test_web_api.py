@@ -1,36 +1,52 @@
 """Regression tests for the web directory and waiting-result contracts."""
+
 from datetime import date
 
 import pandas as pd
 import pytest
 from fastapi import HTTPException
 
-from backend.api import main as api
-from backend.analytics.dashboard_data import hospital_directory
+from backend.http import data, frontend
+from backend.modules.analytics.dashboard_data import hospital_directory
+from backend.modules.analytics.schemas import ReferralFilters
+from backend.modules.hospitals import service as hospitals
+from backend.modules.predictions import service as predictions
+from backend.modules.predictions.schemas import WaitingRequest
 
 
-def test_frontend_version_tracks_both_code_and_styles_without_caching_html(monkeypatch, tmp_path):
-    monkeypatch.setattr(api, "DIST", tmp_path)
-    assert api.frontend_version() == {"assets": []}
+def test_frontend_version_tracks_both_code_and_styles_without_caching_html(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(frontend, "DIST", tmp_path)
+    assert frontend.frontend_version() == {"assets": []}
     index = tmp_path / "index.html"
-    index.write_text('<script type="module" src="/assets/app-a.js"></script>'
-                     '<link rel="stylesheet" href="/assets/theme-a.css">', encoding="utf-8")
-    assert api.frontend_version() == {"assets": ["/assets/app-a.js", "/assets/theme-a.css"]}
-    assert api.frontend("").headers["cache-control"] == "no-store"
-    index.write_text(index.read_text().replace("theme-a.css", "theme-b.css"), encoding="utf-8")
-    assert api.frontend_version()["assets"][1] == "/assets/theme-b.css"
+    index.write_text(
+        '<script type="module" src="/assets/app-a.js"></script>'
+        '<link rel="stylesheet" href="/assets/theme-a.css">',
+        encoding="utf-8",
+    )
+    assert frontend.frontend_version() == {
+        "assets": ["/assets/app-a.js", "/assets/theme-a.css"]
+    }
+    assert frontend.frontend("").headers["cache-control"] == "no-store"
+    index.write_text(
+        index.read_text().replace("theme-a.css", "theme-b.css"), encoding="utf-8"
+    )
+    assert frontend.frontend_version()["assets"][1] == "/assets/theme-b.css"
 
 
 def test_directory_lists_small_hospitals_but_suppresses_unstable_rates(tmp_path):
-    cohort = pd.DataFrame({
-        "hospital_mo": ["Large"] * 10 + ["Small"],
-        "region_origin_code": ["01"] * 11,
-        "bed_profile": ["Cardiology"] * 10 + ["Allergy"],
-        "registration_dt": pd.to_datetime(["2025-01-01"] * 11),
-        "outcome": ["hospitalized"] * 11,
-        "target_eligible": [True] * 11,
-        "wait_days": [2.0] * 10 + [5.0],
-    })
+    cohort = pd.DataFrame(
+        {
+            "hospital_mo": ["Large"] * 10 + ["Small"],
+            "region_origin_code": ["01"] * 11,
+            "bed_profile": ["Cardiology"] * 10 + ["Allergy"],
+            "registration_dt": pd.to_datetime(["2025-01-01"] * 11),
+            "outcome": ["hospitalized"] * 11,
+            "target_eligible": [True] * 11,
+            "wait_days": [2.0] * 10 + [5.0],
+        }
+    )
     path = tmp_path / "cohort.parquet"
     cohort.to_parquet(path)
 
@@ -44,41 +60,80 @@ def test_directory_lists_small_hospitals_but_suppresses_unstable_rates(tmp_path)
 
 
 def test_directory_search_and_pagination_apply_to_all_matches(monkeypatch):
-    monkeypatch.setattr(api, "ready", lambda: {})
-    monkeypatch.setattr(api.db, "hospital_directory", lambda filters: pd.DataFrame({
-        "organization_or_region": ["Central A", "Other", "Central B"],
-        "referrals": [20, 15, 1],
-    }))
-    result = api.hospitals(start=None, end=None, region=None, profile=None,
-                           search="central", limit=1, offset=1)
+    monkeypatch.setattr(data, "require_ready", lambda: {})
+    monkeypatch.setattr(
+        hospitals.db,
+        "hospital_directory",
+        lambda filters: pd.DataFrame(
+            {
+                "organization_or_region": ["Central A", "Other", "Central B"],
+                "referrals": [20, 15, 1],
+            }
+        ),
+    )
+    result = hospitals.list_hospitals(
+        ReferralFilters(), search="central", limit=1, offset=1
+    )
     assert result["total"] == 2
     assert result["items"][0]["organization_or_region"] == "Central B"
 
 
-@pytest.mark.parametrize("method,support", [("hospital_profile_median", 15), ("global_median", 0)])
-def test_supported_wait_prediction_is_served_despite_negative_catboost(monkeypatch, method, support):
-    monkeypatch.setattr(api, "ready", lambda: {})
-    monkeypatch.setattr(api, "model_status", lambda: {"available": True})
-    monkeypatch.setattr(api, "check_hospital", lambda hospital: None)
-    monkeypatch.setattr(api, "resolve_hospital", lambda user, hospital_id, **kwargs: "H")
-    monkeypatch.setattr(api, "load_metadata", lambda: {
-        "feature_options": {key: [value] for key, value in {
-            "hospital_mo": "H", "icd10_ref_diag_code": "I50.0",
-            "bed_profile": "Cardiology", "territorial_type": "City",
-            "referral_purpose": "Treatment", "finance_source": "Public",
-        }.items()},
-        "metrics": {"mae": 5.5}, "test_period": {"start": "2025-03-14", "end": "2025-03-31"},
-    })
-    monkeypatch.setattr(api, "explain_waiting", lambda record: {
-        "prediction": 5.0, "raw_prediction": 5.0, "catboost_raw_prediction": -0.5,
-        "method": method, "support": 15,
-        "training_cutoff": "2025-03-14", "contributions": [],
-    })
-    result = api.predict_wait(api.WaitingRequest(
-        hospital_id="H", icd10_ref_diag_code="I50.0", bed_profile="Cardiology",
-        territorial_type="City", referral_purpose="Treatment",
-        finance_source="Public", registration_dt=date(2025, 3, 31),
-    ))
+@pytest.mark.parametrize(
+    "method,support", [("hospital_profile_median", 15), ("global_median", 0)]
+)
+def test_supported_wait_prediction_is_served_despite_negative_catboost(
+    monkeypatch, method, support
+):
+    monkeypatch.setattr(data, "require_ready", lambda: {})
+    monkeypatch.setattr(predictions, "model_status", lambda: {"available": True})
+    monkeypatch.setattr(data, "ensure_hospital_exists", lambda hospital: None)
+    monkeypatch.setattr(
+        predictions, "resolve_hospital", lambda user, hospital_id, **kwargs: "H"
+    )
+    monkeypatch.setattr(
+        predictions,
+        "load_metadata",
+        lambda: {
+            "feature_options": {
+                key: [value]
+                for key, value in {
+                    "hospital_mo": "H",
+                    "icd10_ref_diag_code": "I50.0",
+                    "bed_profile": "Cardiology",
+                    "territorial_type": "City",
+                    "referral_purpose": "Treatment",
+                    "finance_source": "Public",
+                }.items()
+            },
+            "metrics": {"mae": 5.5},
+            "test_period": {"start": "2025-03-14", "end": "2025-03-31"},
+        },
+    )
+    monkeypatch.setattr(
+        predictions,
+        "explain_waiting",
+        lambda record: {
+            "prediction": 5.0,
+            "raw_prediction": 5.0,
+            "catboost_raw_prediction": -0.5,
+            "method": method,
+            "support": 15,
+            "training_cutoff": "2025-03-14",
+            "contributions": [],
+        },
+    )
+    result = predictions.predict_wait(
+        WaitingRequest(
+            hospital_id="H",
+            icd10_ref_diag_code="I50.0",
+            bed_profile="Cardiology",
+            territorial_type="City",
+            referral_purpose="Treatment",
+            finance_source="Public",
+            registration_dt=date(2025, 3, 31),
+        ),
+        user=None,
+    )
     assert result["clipped"] is False
     assert result["prediction"] == 5.0
     assert result["method"] == method
@@ -86,22 +141,42 @@ def test_supported_wait_prediction_is_served_despite_negative_catboost(monkeypat
     assert result["reference"] == {"median_wait_days": 5.0, "eligible": support}
 
 
-@pytest.mark.parametrize("field,value", [("registration_dt", date(2026, 9, 26)),
-                                        ("icd10_ref_diag_code", "UNKNOWN")])
-def test_wait_api_refuses_unvalidated_dates_and_unknown_categories(monkeypatch, field, value):
-    record = dict(hospital_id="H", icd10_ref_diag_code="I50.0", bed_profile="P",
-                  territorial_type="City", referral_purpose="Treatment",
-                  finance_source="Public", registration_dt=date(2025, 3, 31))
-    fitted_options = {key: [item] for key, item in record.items() if key not in {"registration_dt", "hospital_id"}}
-    monkeypatch.setattr(api, "ready", lambda: {})
-    monkeypatch.setattr(api, "model_status", lambda: {"available": True})
-    monkeypatch.setattr(api, "check_hospital", lambda hospital: None)
-    monkeypatch.setattr(api, "resolve_hospital", lambda user, hospital_id, **kwargs: "H")
-    monkeypatch.setattr(api, "load_metadata", lambda: {
-        "feature_options": fitted_options,
-        "test_period": {"start": "2025-03-14", "end": "2025-03-31"},
-    })
+@pytest.mark.parametrize(
+    "field,value",
+    [("registration_dt", date(2026, 9, 26)), ("icd10_ref_diag_code", "UNKNOWN")],
+)
+def test_wait_api_refuses_unvalidated_dates_and_unknown_categories(
+    monkeypatch, field, value
+):
+    record = dict(
+        hospital_id="H",
+        icd10_ref_diag_code="I50.0",
+        bed_profile="P",
+        territorial_type="City",
+        referral_purpose="Treatment",
+        finance_source="Public",
+        registration_dt=date(2025, 3, 31),
+    )
+    fitted_options = {
+        key: [item]
+        for key, item in record.items()
+        if key not in {"registration_dt", "hospital_id"}
+    }
+    monkeypatch.setattr(data, "require_ready", lambda: {})
+    monkeypatch.setattr(predictions, "model_status", lambda: {"available": True})
+    monkeypatch.setattr(data, "ensure_hospital_exists", lambda hospital: None)
+    monkeypatch.setattr(
+        predictions, "resolve_hospital", lambda user, hospital_id, **kwargs: "H"
+    )
+    monkeypatch.setattr(
+        predictions,
+        "load_metadata",
+        lambda: {
+            "feature_options": fitted_options,
+            "test_period": {"start": "2025-03-14", "end": "2025-03-31"},
+        },
+    )
     record[field] = value
     with pytest.raises(HTTPException) as error:
-        api.predict_wait(api.WaitingRequest(**record))
+        predictions.predict_wait(WaitingRequest(**record), user=None)
     assert error.value.status_code == 422

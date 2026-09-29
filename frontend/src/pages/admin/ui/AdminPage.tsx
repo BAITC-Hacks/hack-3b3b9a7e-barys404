@@ -9,12 +9,10 @@ import { UserMenu } from '../../../entities/user/index'
 import { PageHeading } from '../../../shared/ui/PageHeading'
 import { Brand } from '../../../shared/ui/Brand'
 import { useEntrance } from '../../../shared/lib/useEntrance'
-import { useSlidingIndicator } from '../../../shared/lib/useSlidingIndicator'
 
 export function AdminPage({ user, logout }: { user: User; logout: () => Promise<void> }) {
   const [section, setSection] = useState<'accounts' | 'system'>('accounts')
   const entrance = useEntrance<HTMLDivElement>(section, 'slide')
-  const { trackRef, indicatorRef } = useSlidingIndicator<HTMLElement>(section)
   return (
     <div className="admin-shell">
       <header className="topbar">
@@ -22,29 +20,30 @@ export function AdminPage({ user, logout }: { user: User; logout: () => Promise<
         <DisplayPreferences />
         <UserMenu user={user} logout={logout} />
       </header>
-      <main className="content admin-content">
-        <PageHeading
-          eyebrow=""
-          title={t('Администрирование')}
-          description={t('Аккаунты сотрудников и состояние системы.')}
-        />
-        <nav
-          className="admin-navigation sliding-tabs"
-          aria-label={t('Разделы администрирования')}
-          ref={trackRef}
-        >
-          <span className="tab-indicator" aria-hidden="true" ref={indicatorRef} />
-          <button aria-pressed={section === 'accounts'} onClick={() => setSection('accounts')}>
-            <Users size={18} /> {t('Аккаунты')}{' '}
-          </button>
-          <button aria-pressed={section === 'system'} onClick={() => setSection('system')}>
-            <Server size={18} /> {t('Система')}{' '}
-          </button>
-        </nav>
-        <div ref={entrance}>
-          {section === 'accounts' ? <AdminAccountsPanel user={user} /> : <AdminSystemPanel />}
-        </div>
-      </main>
+      <div className="admin-workspace">
+        <aside className="admin-sidebar">
+          <p>{t('Администрирование')}</p>
+          <nav className="admin-navigation" aria-label={t('Разделы администрирования')}>
+            <button aria-pressed={section === 'accounts'} onClick={() => setSection('accounts')}>
+              <Users size={18} /> {t('Аккаунты')}{' '}
+            </button>
+            <button aria-pressed={section === 'system'} onClick={() => setSection('system')}>
+              <Server size={18} /> {t('Система')}{' '}
+            </button>
+          </nav>
+          <small>{t('Аккаунты сотрудников и состояние системы.')}</small>
+        </aside>
+        <main className="content admin-content">
+          <PageHeading
+            eyebrow=""
+            title={t(section === 'accounts' ? 'Аккаунты' : 'Система')}
+            description={t('Аккаунты сотрудников и состояние системы.')}
+          />
+          <div ref={entrance}>
+            {section === 'accounts' ? <AdminAccountsPanel user={user} /> : <AdminSystemPanel />}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

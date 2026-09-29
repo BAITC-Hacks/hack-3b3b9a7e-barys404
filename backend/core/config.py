@@ -1,4 +1,5 @@
 """Shared paths and explicit, reviewable data/model policy."""
+
 import os
 from pathlib import Path
 
@@ -22,6 +23,7 @@ METADATA_PATH = MODELS_DIR / "model_metadata.json"
 WAITING_MODEL_VERSION = "waiting-hybrid-temporal-v3"
 ANALYTICAL_PATH = PROCESSED_DIR / "analytical.parquet"
 QUALITY_PATH = PROCESSED_DIR / "data_quality_report.json"
+
 
 def ensure_directories():
     for path in (DATA_DIR / "raw", PROCESSED_DIR, MODELS_DIR, ROOT / ".runtime"):

@@ -1,4 +1,5 @@
 """Server-owned scope for the first release: national or one exact hospital."""
+
 from dataclasses import dataclass
 
 

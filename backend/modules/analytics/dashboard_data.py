@@ -1,11 +1,11 @@
 """Bounded, aggregate-only reads for the dashboard; never materialize referral rows."""
+
 from pathlib import Path
 
 import duckdb
 import pandas as pd
 
 from backend.core.config import ANALYTICAL_PATH, DUCKDB_MEMORY_LIMIT, THREAD_COUNT
-
 
 DIMENSIONS = {"region_origin_code", "hospital_mo", "bed_profile"}
 
@@ -20,7 +20,9 @@ def file_version(path):
 
 def aggregate_query(path, sql, parameters=()):
     """SQL templates must be code-owned and aggregate/project before calling df()."""
-    with duckdb.connect(config={"memory_limit": DUCKDB_MEMORY_LIMIT, "threads": THREAD_COUNT}) as con:
+    with duckdb.connect(
+        config={"memory_limit": DUCKDB_MEMORY_LIMIT, "threads": THREAD_COUNT}
+    ) as con:
         return con.execute(sql, [str(path), *parameters]).df()
 
 
@@ -28,12 +30,21 @@ def dimensions(path=ANALYTICAL_PATH, filters=None):
     result = {}
     where, params = cohort_where(filters or {})
     for column in sorted(DIMENSIONS):
-        result[column] = aggregate_query(
-            path,
-            f"SELECT DISTINCT {column} AS value FROM read_parquet(?) "
-            f"WHERE ({where}) AND {column} IS NOT NULL ORDER BY value", params,
-        )["value"].astype(str).tolist()
-    dates = aggregate_query(path, f"SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?) WHERE {where}", params)
+        result[column] = (
+            aggregate_query(
+                path,
+                f"SELECT DISTINCT {column} AS value FROM read_parquet(?) "
+                f"WHERE ({where}) AND {column} IS NOT NULL ORDER BY value",
+                params,
+            )["value"]
+            .astype(str)
+            .tolist()
+        )
+    dates = aggregate_query(
+        path,
+        f"SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?) WHERE {where}",
+        params,
+    )
     result["dates"] = dates.iloc[0].to_dict()
     return result
 
@@ -72,7 +83,17 @@ def overview(filters, path=ANALYTICAL_PATH):
 
 def historical_charts(filters, path=ANALYTICAL_PATH):
     where, params = cohort_where(filters)
-    events = aggregate_query(path, f"""
+
+    events = _historical_events(path, where, params)
+    waits = _waiting_distribution(path, where, params)
+    hospitals = _historical_hospitals(path, where, params)
+    return events, waits, hospitals
+
+
+def _historical_events(path, where, params) -> pd.DataFrame:
+    events = aggregate_query(
+        path,
+        f"""
         WITH cohort AS (SELECT registration_dt, hospitalization_dt, refusal_dt, outcome
             FROM read_parquet(?) WHERE {where}),
         events AS (
@@ -82,18 +103,36 @@ def historical_charts(filters, path=ANALYTICAL_PATH):
             UNION ALL
             SELECT CAST(refusal_dt AS DATE), 'Refusals' FROM cohort WHERE outcome='refused')
         SELECT date, event, count(*) AS records FROM events WHERE date IS NOT NULL GROUP BY ALL ORDER BY date
-        """, params)
-    waits = aggregate_query(path, f"""SELECT floor(wait_days)::INTEGER AS waiting_day,
+        """,
+        params,
+    )
+    return events
+
+
+def _waiting_distribution(path, where, params) -> pd.DataFrame:
+    waits = aggregate_query(
+        path,
+        f"""SELECT floor(wait_days)::INTEGER AS waiting_day,
         count(*) AS records FROM read_parquet(?) WHERE {where} AND target_eligible
-        GROUP BY waiting_day ORDER BY waiting_day""", params)
-    hospitals = aggregate_query(path, f"""SELECT hospital_mo AS hospital,
+        GROUP BY waiting_day ORDER BY waiting_day""",
+        params,
+    )
+    return waits
+
+
+def _historical_hospitals(path, where, params) -> pd.DataFrame:
+    hospitals = aggregate_query(
+        path,
+        f"""SELECT hospital_mo AS hospital,
         count(*) AS referrals, count(*) FILTER (WHERE outcome='unresolved') AS unresolved,
         count(*) FILTER (WHERE outcome='hospitalized') AS hospitalized,
         count(*) FILTER (WHERE outcome='refused') AS refused,
         avg(wait_days) FILTER (WHERE target_eligible) AS mean_wait_days
         FROM read_parquet(?) WHERE {where} GROUP BY hospital_mo
-        ORDER BY referrals DESC LIMIT 20""", params)
-    return events, waits, hospitals
+        ORDER BY referrals DESC LIMIT 20""",
+        params,
+    )
+    return hospitals
 
 
 def pressure_rows(path, hospital=None, start=None, end=None):
@@ -109,11 +148,15 @@ def pressure_rows(path, hospital=None, start=None, end=None):
         params.append(str(end))
     where = " AND ".join(clauses)
     # Already hospital/day aggregates; bounded projection never contains individual identifiers.
-    return aggregate_query(path, f"""SELECT hospital_mo, date, referrals, hospitalized,
+    return aggregate_query(
+        path,
+        f"""SELECT hospital_mo, date, referrals, hospitalized,
         refusals, reconstructed_open_cohort, prototype_pressure,
         pressure_reason, history_days, anomaly_referrals, anomaly_refusals,
         anomaly_open_cohort_growth
-        FROM read_parquet(?) WHERE {where} ORDER BY date DESC, referrals DESC LIMIT 30000""", params)
+        FROM read_parquet(?) WHERE {where} ORDER BY date DESC, referrals DESC LIMIT 30000""",
+        params,
+    )
 
 
 def compare_groups(filters, group_by="hospital_mo", minimum=30, path=ANALYTICAL_PATH):
@@ -129,14 +172,22 @@ def compare_groups(filters, group_by="hospital_mo", minimum=30, path=ANALYTICAL_
 def hospital_directory(filters, path=ANALYTICAL_PATH):
     """List every observed hospital; suppress unstable rates for small groups."""
     where, params = cohort_where(filters)
-    return _comparison_query(path, f"({where}) AND hospital_mo IS NOT NULL", params,
-                             "hospital_mo", minimum=1, metric_minimum=10)
+    return _comparison_query(
+        path,
+        f"({where}) AND hospital_mo IS NOT NULL",
+        params,
+        "hospital_mo",
+        minimum=1,
+        metric_minimum=10,
+    )
 
 
 def _comparison_query(path, where, params, group_by, minimum, metric_minimum=None):
     # Keep the source parameter first; thresholds are validated integers.
     metric_minimum = int(metric_minimum if metric_minimum is not None else minimum)
-    return aggregate_query(path, f"""
+    return aggregate_query(
+        path,
+        f"""
         WITH source AS (SELECT {group_by}, outcome, target_eligible, wait_days FROM read_parquet(?) WHERE {where})
         SELECT COALESCE({group_by}, 'Unknown') AS organization_or_region,
           count(*) AS referrals,
@@ -153,99 +204,215 @@ def _comparison_query(path, where, params, group_by, minimum, metric_minimum=Non
             THEN 100.0 * count(*) FILTER(WHERE outcome='refused') /
               count(*) FILTER(WHERE outcome IN ('hospitalized','refused')) END AS refusal_share_pct
         FROM source GROUP BY 1 HAVING count(*) >= {int(minimum)} ORDER BY referrals DESC, organization_or_region
-        """, params)
+        """,
+        params,
+    )
 
 
 def comparison_trends(filters, group_by, selected, minimum=10, path=ANALYTICAL_PATH):
-    if group_by not in {"hospital_mo", "region_origin_code"} or not 1 <= len(selected) <= 6 or minimum < 10:
-        raise ValueError("Select one to six hospitals/regions; minimum group size is ten.")
+    if (
+        group_by not in {"hospital_mo", "region_origin_code"}
+        or not 1 <= len(selected) <= 6
+        or minimum < 10
+    ):
+        raise ValueError(
+            "Select one to six hospitals/regions; minimum group size is ten."
+        )
     where, params = cohort_where(filters)
-    placeholders = ','.join('?' for _ in selected)
-    return aggregate_query(path, f"""
+    placeholders = ",".join("?" for _ in selected)
+    return aggregate_query(
+        path,
+        f"""
         SELECT COALESCE({group_by}, 'Unknown') AS organization_or_region,
           CAST(date_trunc('week', registration_dt) AS DATE) AS week, count(*) AS referrals
         FROM read_parquet(?) WHERE {where} AND COALESCE({group_by}, 'Unknown') IN ({placeholders})
         GROUP BY 1, 2 HAVING count(*) >= {int(minimum)} ORDER BY week, organization_or_region
-        """, [*params, *selected])
+        """,
+        [*params, *selected],
+    )
 
 
 def weekly_activity(filters, selected=None, limit=15, minimum=10, path=ANALYTICAL_PATH):
-    """Dense, bounded weekly grid. Suppressed small cells stay NaN, never zero."""
     if not 1 <= limit <= 30 or minimum < 10:
-        raise ValueError("Use up to 30 organizations and a suppression threshold of at least 10.")
+        raise ValueError(
+            "Use up to 30 organizations and a suppression threshold of at least 10."
+        )
+
     where, params = cohort_where(filters)
-    hospitals = aggregate_query(path, f"""SELECT hospital_mo AS hospital, count(*) AS referrals
+    names = _activity_hospitals(path, where, params, selected, limit)
+    if not names:
+        return _empty_activity_grid()
+
+    period = _weekly_activity_period(path, filters)
+    if period is None:
+        return _empty_activity_grid()
+
+    start, end = period
+    return _dense_activity_grid(path, where, params, names, start, end, minimum)
+
+
+def _activity_hospitals(path, where, params, selected, limit) -> list[str]:
+    hospitals = aggregate_query(
+        path,
+        f"""SELECT hospital_mo AS hospital, count(*) AS referrals
         FROM read_parquet(?) WHERE {where} AND hospital_mo IS NOT NULL
-        GROUP BY hospital_mo ORDER BY referrals DESC, hospital_mo""", params)
+        GROUP BY hospital_mo ORDER BY referrals DESC, hospital_mo""",
+        params,
+    )
     if selected is not None:
         hospitals = hospitals.loc[hospitals.hospital.isin(selected)]
     names = hospitals.head(limit).hospital.tolist()
-    if not names:
-        return pd.DataFrame(columns=["hospital", "week", "referrals", "suppressed", "partial_week"])
-    bounds = aggregate_query(path, "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)").iloc[0]
+
+    return names
+
+
+def _empty_activity_grid() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=["hospital", "week", "referrals", "suppressed", "partial_week"]
+    )
+
+
+def _weekly_activity_period(path, filters) -> tuple[pd.Timestamp, pd.Timestamp] | None:
+    bounds = aggregate_query(
+        path,
+        "SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?)",
+    ).iloc[0]
     if pd.isna(bounds["first"]) or pd.isna(bounds["last"]):
-        return pd.DataFrame(columns=["hospital", "week", "referrals", "suppressed", "partial_week"])
-    start = max(pd.Timestamp(bounds["first"]).normalize(), pd.Timestamp(filters.get("start") or bounds["first"]).normalize())
-    end = min(pd.Timestamp(bounds["last"]).normalize(), pd.Timestamp(filters.get("end") or bounds["last"]).normalize())
+        return None
+    start = max(
+        pd.Timestamp(bounds["first"]).normalize(),
+        pd.Timestamp(filters.get("start") or bounds["first"]).normalize(),
+    )
+    end = min(
+        pd.Timestamp(bounds["last"]).normalize(),
+        pd.Timestamp(filters.get("end") or bounds["last"]).normalize(),
+    )
     if start > end:
-        return pd.DataFrame(columns=["hospital", "week", "referrals", "suppressed", "partial_week"])
+        return None
+    return start, end
+
+
+def _dense_activity_grid(
+    path, where, params, names, start, end, minimum
+) -> pd.DataFrame:
     placeholders = ",".join("?" for _ in names)
-    observed = aggregate_query(path, f"""SELECT hospital_mo AS hospital,
+    observed = aggregate_query(
+        path,
+        f"""SELECT hospital_mo AS hospital,
         CAST(date_trunc('week', registration_dt) AS DATE) AS week, count(*) AS referrals
         FROM read_parquet(?) WHERE {where} AND hospital_mo IN ({placeholders})
-        GROUP BY 1, 2 ORDER BY week""", [*params, *names])
+        GROUP BY 1, 2 ORDER BY week""",
+        [*params, *names],
+    )
     weeks = pd.date_range(start - pd.Timedelta(days=start.weekday()), end, freq="W-MON")
     index = pd.MultiIndex.from_product([names, weeks], names=["hospital", "week"])
-    grid = observed.set_index(["hospital", "week"]).reindex(index, fill_value=0).reset_index()
+    grid = (
+        observed.set_index(["hospital", "week"])
+        .reindex(index, fill_value=0)
+        .reset_index()
+    )
     grid["suppressed"] = grid.referrals.between(1, minimum - 1)
     grid.loc[grid.suppressed, "referrals"] = float("nan")
-    grid["partial_week"] = (grid.week < start) | ((grid.week + pd.Timedelta(days=6)) > end)
+    grid["partial_week"] = (grid.week < start) | (
+        (grid.week + pd.Timedelta(days=6)) > end
+    )
     return grid
 
 
 def recent_activity(filters, path=ANALYTICAL_PATH):
-    """Compare two full consecutive 7-day windows within the selected source interval."""
-    scope_where, scope_params = cohort_where({key: value for key, value in filters.items() if key not in {"start", "end"}})
-    bounds = aggregate_query(path, f"SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?) WHERE {scope_where}", scope_params).iloc[0]
+    period = _recent_activity_period(path, filters)
+    if period is None:
+        return {}, pd.DataFrame()
+
+    end, current_start, previous_start = period
+    table = _recent_activity_counts(path, filters, current_start, previous_start, end)
+    table["change_pct"] = (
+        100 * (table.current - table.previous) / table.previous.replace(0, float("nan"))
+    )
+    period = {
+        "start": str(current_start.date()),
+        "end": str(end.date()),
+        "previous_start": str(previous_start.date()),
+        "previous_end": str((current_start - pd.Timedelta(days=1)).date()),
+    }
+    return period, table
+
+
+def _recent_activity_period(path, filters):
+    scope_where, scope_params = cohort_where(
+        {key: value for key, value in filters.items() if key not in {"start", "end"}}
+    )
+    bounds = aggregate_query(
+        path,
+        f"SELECT min(registration_dt) AS first, max(registration_dt) AS last FROM read_parquet(?) WHERE {scope_where}",
+        scope_params,
+    ).iloc[0]
     if pd.isna(bounds["first"]) or pd.isna(bounds["last"]):
-        return {}, pd.DataFrame()
-    first = max(pd.Timestamp(bounds["first"]).normalize(), pd.Timestamp(filters.get("start") or bounds["first"]).normalize())
-    end = min(pd.Timestamp(bounds["last"]).normalize(), pd.Timestamp(filters.get("end") or bounds["last"]).normalize())
+        return None
+    first = max(
+        pd.Timestamp(bounds["first"]).normalize(),
+        pd.Timestamp(filters.get("start") or bounds["first"]).normalize(),
+    )
+    end = min(
+        pd.Timestamp(bounds["last"]).normalize(),
+        pd.Timestamp(filters.get("end") or bounds["last"]).normalize(),
+    )
     if (end - first).days < 13:
-        return {}, pd.DataFrame()
-    current_start, previous_start = end - pd.Timedelta(days=6), end - pd.Timedelta(days=13)
+        return None
+    current_start, previous_start = (
+        end - pd.Timedelta(days=6),
+        end - pd.Timedelta(days=13),
+    )
+    return end, current_start, previous_start
+
+
+def _recent_activity_counts(path, filters, current_start, previous_start, end):
     narrowed = {**filters, "start": previous_start.date(), "end": end.date()}
     where, params = cohort_where(narrowed)
-    # Keep the source placeholder first, then the period boundary and cohort filters.
-    table = aggregate_query(path, f"""WITH source AS (
+    table = aggregate_query(
+        path,
+        f"""WITH source AS (
         SELECT hospital_mo, registration_dt, region_origin_code, bed_profile FROM read_parquet(?))
         SELECT hospital_mo AS hospital,
         count(*) FILTER(WHERE CAST(registration_dt AS DATE) >= CAST(? AS DATE)) AS current,
         count(*) FILTER(WHERE CAST(registration_dt AS DATE) < CAST(? AS DATE)) AS previous
         FROM source WHERE {where} GROUP BY hospital_mo ORDER BY current DESC, hospital_mo""",
-        [str(current_start.date()), str(current_start.date()), *params])
-    table["change_pct"] = 100 * (table.current - table.previous) / table.previous.replace(0, float("nan"))
-    period = {"start": str(current_start.date()), "end": str(end.date()),
-              "previous_start": str(previous_start.date()), "previous_end": str((current_start - pd.Timedelta(days=1)).date())}
-    return period, table
+        [str(current_start.date()), str(current_start.date()), *params],
+    )
+    return table
 
 
 def hospital_profiles(filters, path=ANALYTICAL_PATH):
     where, params = cohort_where(filters)
-    return aggregate_query(path, f"""SELECT COALESCE(bed_profile, 'Не указан') AS profile,
+    return aggregate_query(
+        path,
+        f"""SELECT COALESCE(bed_profile, 'Не указан') AS profile,
         count(*) AS referrals, count(*) FILTER(WHERE target_eligible) AS eligible,
         CASE WHEN count(*) FILTER(WHERE target_eligible) >= 10
         THEN median(wait_days) FILTER(WHERE target_eligible) END AS median_wait
-        FROM read_parquet(?) WHERE {where} GROUP BY 1 ORDER BY referrals DESC, profile LIMIT 8""", params)
+        FROM read_parquet(?) WHERE {where} GROUP BY 1 ORDER BY referrals DESC, profile LIMIT 8""",
+        params,
+    )
 
 
 def representative_profile(hospital, options, path=ANALYTICAL_PATH):
     """An observed common category combination, never an individual record."""
-    columns = ["hospital_mo", "icd10_ref_diag_code", "bed_profile", "territorial_type", "referral_purpose", "finance_source"]
+    columns = [
+        "hospital_mo",
+        "icd10_ref_diag_code",
+        "bed_profile",
+        "territorial_type",
+        "referral_purpose",
+        "finance_source",
+    ]
     names = ", ".join(columns)
-    table = aggregate_query(path, f"""SELECT {names}, count(*) AS records FROM read_parquet(?)
+    table = aggregate_query(
+        path,
+        f"""SELECT {names}, count(*) AS records FROM read_parquet(?)
         WHERE hospital_mo = ? AND target_eligible GROUP BY {names}
-        HAVING count(*) >= 10 ORDER BY records DESC, {names} LIMIT 100""", [hospital])
+        HAVING count(*) >= 10 ORDER BY records DESC, {names} LIMIT 100""",
+        [hospital],
+    )
     for row in table.to_dict(orient="records"):
         if all(row[name] in options.get(name, []) for name in columns):
             return {name: row[name] for name in columns}

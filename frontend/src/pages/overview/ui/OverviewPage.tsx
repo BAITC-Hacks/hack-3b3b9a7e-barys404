@@ -1,5 +1,5 @@
 import { t } from '../../../shared/lib/i18n'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Building2, GitCompareArrows, Sparkles } from 'lucide-react'
 import { query } from '../../../entities/hospital/index'
 import {
   type Bootstrap,
@@ -60,6 +60,25 @@ export function OverviewPage({
         }
         action={<span className="overview-source">{t('Исторические данные · 2025')}</span>}
       />
+      <div className="overview-shortcuts">
+        <button onClick={() => (mode === 'hospital' ? openHospital(hospital) : go('hospitals'))}>
+          <Building2 size={18} />
+          <span>{t(mode === 'hospital' ? 'Моя больница' : 'Найти больницу')}</span>
+          <ArrowRight size={16} />
+        </button>
+        {mode === 'government' && (
+          <button onClick={() => go('compare')}>
+            <GitCompareArrows size={18} />
+            <span>{t('Сравнить стационары')}</span>
+            <ArrowRight size={16} />
+          </button>
+        )}
+        <button onClick={() => go('forecasts')}>
+          <Sparkles size={18} />
+          <span>{t('Рассчитать прогноз')}</span>
+          <ArrowRight size={16} />
+        </button>
+      </div>
       <FilterBar filters={filters} setFilters={setFilters} bootstrap={bootstrap} />
       {loading && <Loading />}
       {error && <ErrorState message={error} />}
@@ -70,7 +89,7 @@ export function OverviewPage({
         />
       )}
       {data && data.stats.referrals > 0 && (
-        <>
+        <div className="overview-analysis">
           <OverviewMetrics data={data} />
           <div className="overview-layout" ref={panels}>
             <TrendPanel rows={data.trend} />
@@ -98,7 +117,7 @@ export function OverviewPage({
             )}
             <AttentionPanel items={data.attention} openHospital={openHospital} />
           </div>
-        </>
+        </div>
       )}
     </>
   )

@@ -1,5 +1,5 @@
 import { t } from '../../../shared/lib/i18n'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { query } from '../../../entities/hospital/index'
 import { type Filters, type MetricRow } from '../../../shared/api/types'
 import { HospitalRow } from '../../../widgets/hospital-directory/index'
@@ -16,9 +16,11 @@ import { regionLabel } from '../../../entities/region/index'
 export function HospitalsPage({
   filters,
   openHospital,
+  filterBar,
 }: {
   filters: Filters
   openHospital: (name: string) => void
+  filterBar?: ReactNode
 }) {
   const search = useSubmittedSearch()
   const [offset, setOffset] = useState(0)
@@ -35,6 +37,7 @@ export function HospitalsPage({
         title={t('Найдите нужную больницу')}
         description={t('Откройте организацию, чтобы увидеть её профиль, исходы и прогноз.')}
       />
+      {filterBar}
       <section className="panel directory-panel">
         <div className="directory-toolbar">
           <SearchForm

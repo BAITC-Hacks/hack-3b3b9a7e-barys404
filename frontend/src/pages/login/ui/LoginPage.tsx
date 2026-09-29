@@ -29,9 +29,21 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
   }
   return (
     <div className="login-page">
-      <div className="login-story">
+      <header className="login-topbar">
         <Brand />
+        <div className="login-topbar-actions">
+          <a className="back-link" href="#welcome">
+            <ChevronLeft size={16} />
+            {t('О платформе')}
+          </a>
+          <DisplayPreferences />
+        </div>
+      </header>
+      <div className="login-story">
         <div>
+          <span className="login-story-icon">
+            <ShieldCheck size={28} strokeWidth={1.5} />
+          </span>
           <h2>{t('Рабочий кабинет')}</h2>
           <p>{t('Платформа откроет разделы, доступные вашей учётной записи.')}</p>
           <dl className="login-scopes">
@@ -54,12 +66,6 @@ export function LoginPage({ onLogin, notice }: { onLogin: (user: User) => void; 
         </span>
       </div>
       <main className="login-main">
-        <div className="login-preferences">
-          <DisplayPreferences />
-        </div>
-        <a className="back-link" href="#welcome">
-          <ChevronLeft size={16} /> {t('О платформе')}{' '}
-        </a>
         <div className="login-form-card" ref={entrance}>
           <h1>{t('Вход в кабинет')}</h1>
           <p>{t('Используйте учётную запись, выданную администратором.')}</p>

@@ -1,4 +1,10 @@
 export const commonMessages: Record<string, { kk: string; en: string }> = {
+  'Фильтры направлений': { kk: 'Жолдамалар сүзгілері', en: 'Referral filters' },
+  Применить: { kk: 'Қолдану', en: 'Apply' },
+  'Изменения не применены': { kk: 'Өзгерістер қолданылмады', en: 'Changes not applied' },
+  'Найти больницу': { kk: 'Аурухананы табу', en: 'Find a hospital' },
+  'Рассчитать прогноз': { kk: 'Болжамды есептеу', en: 'Calculate a forecast' },
+  'Сравнить стационары': { kk: 'Стационарларды салыстыру', en: 'Compare hospitals' },
   Обзор: { kk: 'Шолу', en: 'Overview' },
   Стационары: { kk: 'Стационарлар', en: 'Hospitals' },
   Стационар: { kk: 'Стационар', en: 'Hospital' },

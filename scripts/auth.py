@@ -6,18 +6,18 @@ import secrets
 
 import psycopg
 
-from backend.auth import store
-from backend.core.config import ROOT, ANALYTICAL_PATH
+from backend.core.config import ANALYTICAL_PATH, ROOT
+from backend.modules.auth import store
 
 
 def sync():
-    from backend.analytics import dashboard_data as db
+    from backend.modules.analytics import dashboard_data as db
     rows = db.aggregate_query(ANALYTICAL_PATH, "SELECT DISTINCT hospital_mo FROM read_parquet(?) WHERE hospital_mo IS NOT NULL ORDER BY hospital_mo")
     store.sync_organizations(rows.hospital_mo.tolist())
 
 
 def seed_demo():
-    from backend.analytics import dashboard_data as db
+    from backend.modules.analytics import dashboard_data as db
     sync()
     top = db.aggregate_query(ANALYTICAL_PATH, "SELECT hospital_mo FROM read_parquet(?) WHERE hospital_mo IS NOT NULL GROUP BY hospital_mo ORDER BY count(*) DESC, hospital_mo LIMIT 2")
     catalog = {item["name"]: item["id"] for item in store.organizations()}

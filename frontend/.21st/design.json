@@ -57,6 +57,24 @@
   },
   "decisions": [
     {
+      "date": "2026-09-29",
+      "scope": "overview metric rail placement",
+      "direction": "Place the existing four-metric rail on the right of the charts on desktop and tablet; preserve metrics-first stacking on narrow screens.",
+      "basis": "User requested moving the pictured referrals, hospitals, waiting and admissions column to the right. CSS grid placement only; existing MetricCard and TrendPanel unchanged."
+    },
+    {
+      "date": "2026-09-29",
+      "scope": "complete public portal, operational workspace and administration",
+      "direction": "Docked role-aware navigation; metric rail beside a full-width overview chart; explicit draft/apply filters after page headings; instrument-and-result forecast layout; sign-in portal with role context; persistent administration navigation",
+      "basis": "User approved a substantial reversible redesign while explicitly preserving the current palette. Reuse existing FSD primitives and unchanged server/model contracts, dark/light tokens and RU/KK/EN preferences.",
+      "inspiration": [
+        "https://21st.dev/@arunjdass/components/dashboard-sidebar",
+        "https://21st.dev/@shadcnstore/components/app-1",
+        "https://21st.dev/@efferd/components/workspaces"
+      ],
+      "implementation": "src/app/styles/redesign.css plus existing page, shell and referral-filter slices. No additional UI dependencies or hosted generation."
+    },
+    {
       "date": "2026-09-28",
       "scope": "workspace shell and overview",
       "direction": "Light clinical workspace; restrained teal; metric ledger; no decorative cards",

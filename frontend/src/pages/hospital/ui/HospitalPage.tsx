@@ -1,4 +1,5 @@
 import { t } from '../../../shared/lib/i18n'
+import { type ReactNode } from 'react'
 import { type Filters, type HospitalDetail, type Overview } from '../../../shared/api/types'
 import { type Mode, type View } from '../../../shared/config/navigation'
 import { useRemote } from '../../../shared/lib/useRemote'
@@ -19,12 +20,14 @@ export function HospitalPage({
   mode,
   go,
   compare,
+  filterBar,
 }: {
   hospital: string
   filters: Filters
   mode: Mode
   go: (view: View) => void
   compare: () => void
+  filterBar?: ReactNode
 }) {
   const detail = useRemote<HospitalDetail>(
     hospital ? `/hospital/overview${query({ ...filters, hospital })}` : null,
@@ -55,6 +58,7 @@ export function HospitalPage({
           </div>
         }
       />
+      {filterBar}
       {(detail.loading || trend.loading) && <Loading />}
       {detail.error && <ErrorState message={detail.error} />}
       {trend.error && <ErrorState message={trend.error} />}

@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 from pypdf import PdfReader
 
-from backend.analytics.dashboard_data import weekly_activity, recent_activity
-from backend.analytics.briefing import build_briefing_pdf
+from backend.modules.analytics.dashboard_data import recent_activity, weekly_activity
+from backend.modules.briefings.pdf import build_briefing_pdf
 
 
 @pytest.fixture
