@@ -19,7 +19,9 @@ export function WelcomePage({ section }: { section?: string }) {
   }, [section])
   return (
     <div className="welcome-page">
-      <PublicHeader />
+      <div className="welcome-header-shell">
+        <PublicHeader />
+      </div>
       <main>
         <WelcomeHero />
         <WelcomeAudiences />

@@ -38,6 +38,12 @@
   min-height: 100vh;
   background: var(--surface);
 }
+.welcome-header-shell {
+  border-bottom: 1px solid var(--line);
+}
+.welcome-header-shell .public-header {
+  border-bottom: 0;
+}
 .welcome-page a.primary-button,
 .welcome-page a.secondary-button {
   text-decoration: none;
