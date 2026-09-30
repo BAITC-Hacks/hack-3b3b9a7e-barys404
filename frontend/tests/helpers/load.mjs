@@ -12,6 +12,8 @@ export async function load(entry) {
     packages: 'external',
     platform: 'node',
     format: 'cjs',
+    // Keep imported photos usable in the in-memory component bundle.
+    loader: { '.jpeg': 'dataurl' },
     write: false,
     logLevel: 'silent',
   })
